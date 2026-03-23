@@ -1,13 +1,24 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { verifyToken } from '@/lib/jwt'
+import { jwtVerify } from 'jose'
+
+const JWT_SECRET = process.env.JWT_SECRET || "SUPER_SECRET_SKILLSPRINT_KEY_31564696";
+const encodedSecret = new TextEncoder().encode(JWT_SECRET);
+
+async function verifyToken(token: string) {
+  try {
+    const { payload } = await jwtVerify(token, encodedSecret);
+    return payload;
+  } catch (error) {
+    return null;
+  }
+}
 
 export async function middleware(request: NextRequest) {
   const token = request.cookies.get('auth_token')?.value
   const isAuthPage = request.nextUrl.pathname.startsWith('/login')
 
   const validToken = token ? await verifyToken(token) : null
-
   // Redirect to login if unauthenticated and trying to access protected route
   if (!validToken && !isAuthPage) {
     if (
