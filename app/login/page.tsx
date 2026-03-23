@@ -46,13 +46,14 @@ export default function LoginPage() {
     setSuccess("")
     setLoading(true)
 
-    const endpoint = mode === "login" ? "/api/auth/login" : "/api/auth/signup"
+    const endpoint = mode === "login" ? "http://localhost:8080/api/auth/login" : "http://localhost:8080/api/auth/signup"
 
     try {
       const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
+        credentials: "include",
       })
 
       const data = await res.json()
