@@ -1,8 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
-import { Menu, X, Zap } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { Menu, X, Zap, LogOut, User } from "lucide-react"
 
 const navLinks = [
   { href: "/dashboard", label: "DASHBOARD" },
@@ -13,6 +14,32 @@ const navLinks = [
 
 export function Nav() {
   const [open, setOpen] = useState(false)
+  const [user, setUser] = useState<{name: string, email: string} | null>(null)
+  const [loading, setLoading] = useState(true)
+  const router = useRouter()
+
+  useEffect(() => {
+    async function fetchUser() {
+      try {
+        const res = await fetch("/api/auth/me")
+        if (res.ok) {
+          const data = await res.json()
+          setUser(data.user)
+        }
+      } catch (err) {
+        console.error(err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchUser()
+  }, [])
+
+  async function handleLogout() {
+    await fetch("/api/auth/logout", { method: "POST" })
+    setUser(null)
+    router.push("/login")
+  }
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-neon-cyan/10 bg-deep-bg/60 backdrop-blur-xl">
@@ -43,18 +70,40 @@ export function Nav() {
         </div>
 
         <div className="hidden items-center gap-3 md:flex">
-          <Link
-            href="/dashboard"
-            className="px-4 py-2 font-mono text-[10px] tracking-widest text-muted-foreground transition-colors hover:text-foreground"
-          >
-            LOG IN
-          </Link>
-          <Link
-            href="/arena"
-            className="border border-neon-cyan/50 bg-neon-cyan/10 px-5 py-2 font-mono text-[10px] tracking-widest text-neon-cyan transition-all hover:bg-neon-cyan/20 hover:shadow-[0_0_20px_rgba(0,240,255,0.15)]"
-          >
-            ENTER ARENA
-          </Link>
+          {!loading && user ? (
+            <>
+              <div className="flex items-center gap-2 px-3 py-1.5 border border-neon-cyan/30 bg-neon-cyan/5">
+                <User className="h-4 w-4 text-neon-cyan" />
+                <span className="font-mono text-[11px] font-bold tracking-widest text-neon-cyan uppercase">
+                  {user.name}
+                </span>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 px-4 py-2 font-mono text-[10px] tracking-widest text-muted-foreground transition-colors hover:text-neon-pink"
+              >
+                <LogOut className="h-3 w-3" />
+                LOG OUT
+              </button>
+            </>
+          ) : !loading && !user ? (
+            <>
+              <Link
+                href="/login"
+                className="flex items-center gap-2 px-4 py-2 font-mono text-[10px] tracking-widest text-muted-foreground transition-colors hover:text-neon-cyan"
+              >
+                LOGIN
+              </Link>
+              <Link
+                href="/arena"
+                className="border border-neon-cyan/50 bg-neon-cyan/10 px-5 py-2 font-mono text-[10px] tracking-widest text-neon-cyan transition-all hover:bg-neon-cyan/20 hover:shadow-[0_0_20px_rgba(0,240,255,0.15)]"
+              >
+                ENTER ARENA
+              </Link>
+            </>
+          ) : (
+            <div className="h-8 w-24 animate-pulse bg-neon-cyan/10 border border-neon-cyan/20" />
+          )}
         </div>
 
         <button
@@ -80,18 +129,42 @@ export function Nav() {
               </Link>
             ))}
             <div className="mt-3 flex flex-col gap-2 border-t border-panel-border pt-4">
-              <Link
-                href="/dashboard"
-                className="px-4 py-3 font-mono text-xs tracking-widest text-muted-foreground"
-              >
-                LOG IN
-              </Link>
-              <Link
-                href="/arena"
-                className="border border-neon-cyan/50 bg-neon-cyan/10 px-5 py-3 text-center font-mono text-xs tracking-widest text-neon-cyan"
-              >
-                ENTER ARENA
-              </Link>
+              {!loading && user ? (
+                <>
+                  <div className="flex items-center gap-3 px-4 py-3 border border-neon-cyan/30 bg-neon-cyan/5">
+                    <User className="h-4 w-4 text-neon-cyan" />
+                    <span className="font-mono text-xs font-bold tracking-widest text-neon-cyan uppercase">
+                      {user.name}
+                    </span>
+                  </div>
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 px-4 py-3 font-mono text-xs tracking-widest text-muted-foreground hover:text-neon-pink"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    LOG OUT
+                  </button>
+                </>
+              ) : !loading && !user ? (
+                <>
+                  <Link
+                    href="/login"
+                    onClick={() => setOpen(false)}
+                    className="flex items-center gap-2 px-4 py-3 font-mono text-xs tracking-widest text-muted-foreground hover:text-neon-cyan"
+                  >
+                    LOGIN
+                  </Link>
+                  <Link
+                    href="/arena"
+                    onClick={() => setOpen(false)}
+                    className="border border-neon-cyan/50 bg-neon-cyan/10 px-5 py-3 text-center font-mono text-xs tracking-widest text-neon-cyan"
+                  >
+                    ENTER ARENA
+                  </Link>
+                </>
+              ) : (
+                <div className="h-10 w-full animate-pulse bg-neon-cyan/10 border border-neon-cyan/20" />
+              )}
             </div>
           </div>
         </div>

@@ -203,7 +203,7 @@ export function HeroSection() {
             {/* Center CTA */}
             <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
               <Link
-                href="/arena"
+                href="/login"
                 className="group flex items-center justify-center gap-3 border-2 border-neon-cyan bg-neon-cyan/10 px-8 py-3.5 font-mono text-xs tracking-widest text-neon-cyan transition-all hover:bg-neon-cyan/20 hover:shadow-[0_0_30px_rgba(0,240,255,0.3)] hud-panel backdrop-blur-sm"
               >
                 <Swords className="h-4 w-4" />
@@ -282,8 +282,8 @@ export function HeroSection() {
               {/* Enter Match button */}
               <div className="px-4 pb-4">
                 <Link
-                  href="/arena"
-                  className="flex items-center justify-center gap-2 border-2 border-neon-pink/60 bg-neon-pink/10 px-4 py-3 font-mono text-xs font-bold tracking-widest text-neon-pink transition-all hover:bg-neon-pink/20 hover:shadow-[0_0_20px_rgba(255,45,111,0.2)] animate-border-glow"
+                  href="/login"
+                  className="w-full flex items-center justify-center gap-2 border-2 border-neon-pink/60 bg-neon-pink/10 px-4 py-3 font-mono text-xs font-bold tracking-widest text-neon-pink transition-all hover:bg-neon-pink/20 hover:shadow-[0_0_20px_rgba(255,45,111,0.2)] animate-border-glow"
                 >
                   <Swords className="h-3.5 w-3.5" />
                   ENTER MATCH
