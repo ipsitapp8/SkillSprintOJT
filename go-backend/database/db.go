@@ -5,7 +5,7 @@ import (
 
 	"backend/models"
 
-	"gorm.io/driver/sqlite"
+	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 )
 
@@ -19,11 +19,31 @@ func ConnectDB() {
 		log.Fatal("Failed to connect to database!", err)
 	}
 
-	// We only read from it, but if tables don't exist, this tries to migrate it based on the struct
-	err = database.AutoMigrate(&models.User{})
+	err = database.AutoMigrate(
+		&models.User{},
+		&models.QuizCategory{},
+		&models.Arena{},
+		&models.Quiz{},
+		&models.Question{},
+		&models.Option{},
+		&models.Attempt{},
+		&models.AttemptAnswer{},
+	)
 	if err != nil {
 		log.Println("Database migration error (ignoring if table already populated):", err)
 	}
 
+	sqlDB, err := database.DB()
+	if err == nil {
+		// SQLite standard for avoiding locks in concurrent access
+		sqlDB.SetMaxOpenConns(1)
+		database.Exec("PRAGMA journal_mode=WAL;")
+		database.Exec("PRAGMA synchronous=NORMAL;")
+	}
+
 	DB = database
+	log.Println("Database connection established (WAL mode enabled)")
+
+	// Basic check to seed data if empty
+	SeedDB()
 }

@@ -24,16 +24,34 @@ func main() {
 
 	// Note: We mount to /api to match Next.js routes
 	api := r.Group("/api")
-	
+
 	// Auth Routes
 	auth := api.Group("/auth")
 	{
 		auth.POST("/login", handlers.LoginHandler)
 		auth.POST("/signup", handlers.SignupHandler)
 		auth.POST("/logout", handlers.LogoutHandler)
-		
+
 		// Protected me route
 		auth.GET("/me", middleware.JWTMiddleware(), handlers.MeHandler)
+	}
+
+	// Public Arena Routes
+	api.GET("/arenas", handlers.GetArenas)
+	api.GET("/arenas/:id", handlers.GetArenaDetail)
+	api.GET("/arenas/:id/quizzes", handlers.GetArenaQuizzes)
+	api.GET("/quizzes/:quizId/questions", handlers.GetQuizQuestions)
+
+	// Leaderboard Route
+	api.GET("/attempts/leaderboard", handlers.GetLeaderboard)
+
+	// Protected Routes (Attempts & Evaluation)
+	protected := api.Group("/")
+	protected.Use(middleware.JWTMiddleware())
+	{
+		protected.POST("/attempts", handlers.SubmitAttempt)
+		protected.GET("/attempts/:id", handlers.GetAttemptResult)
+		protected.POST("/evaluate-answer", handlers.EvaluateAnswer)
 	}
 
 	log.Println("Starting Gin server on :8080")
