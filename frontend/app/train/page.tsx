@@ -19,10 +19,56 @@ import {
 } from "lucide-react"
 
 const topTopics = [
-  { title: "DATA STRUCTURES", description: "Arrays, Linked Lists, Trees, and Graphs combat preparation.", icon: Code2, count: 24, mastery: 65, color: "cyan" as const },
-  { title: "SYSTEM DESIGN", description: "Scalability, Load Balancing, and Architecture blueprints.", icon: Cpu, count: 18, mastery: 42, color: "pink" as const },
-  { title: "DATABASE MGMT", description: "SQL vs NoSQL, Indexing, and ACID transactions.", icon: Database, count: 12, mastery: 15, color: "yellow" as const },
-  { title: "FRONTEND DEV", description: "DOM, Frameworks, CSS Engine, and Web Performance.", icon: Layout, count: 20, mastery: 88, color: "cyan" as const },
+  { 
+    title: "DSA", 
+    description: "Data Structures & Algorithms. Trees, Graphs, and DP combat prep.", 
+    icon: Code2, 
+    count: 42, 
+    mastery: 65, 
+    difficulty: "Hard" as const,
+    lastScore: 78,
+    color: "pink" as const 
+  },
+  { 
+    title: "DBMS", 
+    description: "Database Management. SQL, Normalization, and ACID architecture.", 
+    icon: Database, 
+    count: 24, 
+    mastery: 42, 
+    difficulty: "Medium" as const,
+    lastScore: 85,
+    color: "cyan" as const 
+  },
+  { 
+    title: "OS", 
+    description: "Operating Systems. Process Sync, Memory, and Kernel logic.", 
+    icon: Cpu, 
+    count: 18, 
+    mastery: 15, 
+    difficulty: "Medium" as const,
+    lastScore: 40,
+    color: "yellow" as const 
+  },
+  { 
+    title: "JAVASCRIPT", 
+    description: "JS Engines, Closures, Event Loop, and Web API mastery.", 
+    icon: Layout, 
+    count: 35, 
+    mastery: 88, 
+    difficulty: "Easy" as const,
+    lastScore: 92,
+    color: "cyan" as const 
+  },
+  { 
+    title: "APTITUDE", 
+    description: "Quantitative and Logical reasoning drills for speed.", 
+    icon: Target, 
+    count: 50, 
+    mastery: 30, 
+    difficulty: "Easy" as const,
+    lastScore: 65,
+    color: "yellow" as const 
+  },
 ]
 
 const trainingModes = [
@@ -79,7 +125,7 @@ export default function TrainPage() {
               </span>
               <div className="h-px flex-1 bg-panel-border" />
             </div>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
               {topTopics.map((topic) => (
                 <TopicCard key={topic.title} {...topic} />
               ))}
