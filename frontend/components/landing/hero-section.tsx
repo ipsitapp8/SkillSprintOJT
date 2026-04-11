@@ -47,7 +47,7 @@ function HudCorner({ className }: { className?: string }) {
 const leaderboardData = [
   { rank: 1, name: "SYNERGY", points: 4820, icon: "cyan" },
   { rank: 2, name: "SHADOWFOX", points: 4510, icon: "pink" },
-  { rank: 3, name: "NEONBLADE", points: 4365, icon: "amber" },
+  { rank: 3, name: "NEONBLADE", points: 4365, icon: "yellow" },
 ]
 
 export function HeroSection() {
@@ -144,7 +144,7 @@ export function HeroSection() {
                 {[
                   { label: "SPEED", value: "92%", icon: Zap, color: "neon-cyan" },
                   { label: "ACCURACY", value: "87%", icon: Crosshair, color: "neon-cyan" },
-                  { label: "WINS", value: "315", icon: Trophy, color: "neon-amber" },
+                  { label: "WINS", value: "315", icon: Trophy, color: "neon-yellow" },
                   { label: "RANK", value: "DIAMOND II", icon: Shield, color: "neon-pink" },
                 ].map((stat) => (
                   <div
@@ -204,7 +204,7 @@ export function HeroSection() {
             <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
               <Link
                 href="/login"
-                className="group flex items-center justify-center gap-3 border-2 border-neon-cyan bg-neon-cyan/10 px-8 py-3.5 font-mono text-xs tracking-widest text-neon-cyan transition-all hover:bg-neon-cyan/20 hover:shadow-[0_0_30px_rgba(0,240,255,0.3)] hud-panel backdrop-blur-sm"
+                className="group flex items-center justify-center gap-3 border border-neon-cyan bg-neon-cyan/10 px-8 py-3.5 font-mono text-xs tracking-widest text-neon-cyan transition-all hover:bg-neon-cyan/20 hover:shadow-[0_0_30px_rgba(0,240,255,0.2)] hud-panel backdrop-blur-sm"
               >
                 <Swords className="h-4 w-4" />
                 ENTER ARENA
@@ -260,7 +260,7 @@ export function HeroSection() {
                     <span className="font-mono text-[11px] tracking-wider text-muted-foreground">
                       RANK
                     </span>
-                    <span className="font-mono text-sm font-bold text-neon-amber text-glow-amber">
+                    <span className="font-mono text-sm font-bold text-neon-yellow text-glow-yellow">
                       PLATINUM I
                     </span>
                   </div>
@@ -283,7 +283,7 @@ export function HeroSection() {
               <div className="px-4 pb-4">
                 <Link
                   href="/login"
-                  className="w-full flex items-center justify-center gap-2 border-2 border-neon-pink/60 bg-neon-pink/10 px-4 py-3 font-mono text-xs font-bold tracking-widest text-neon-pink transition-all hover:bg-neon-pink/20 hover:shadow-[0_0_20px_rgba(255,45,111,0.2)] animate-border-glow"
+                  className="w-full flex items-center justify-center gap-2 border border-neon-pink/60 bg-neon-pink/10 px-4 py-3 font-mono text-xs font-bold tracking-widest text-neon-pink transition-all hover:bg-neon-pink/20 hover:shadow-[0_0_20px_rgba(255,45,111,0.15)] animate-border-glow"
                 >
                   <Swords className="h-3.5 w-3.5" />
                   ENTER MATCH
@@ -305,12 +305,12 @@ export function HeroSection() {
             <div className="border-b border-panel-border bg-panel-bg/60 px-5 py-2.5">
               <div className="flex items-center justify-center gap-2">
                 <div className="h-px flex-1 bg-neon-amber/20" />
-                <Trophy className="h-3 w-3 text-neon-amber" />
-                <span className="font-mono text-[10px] font-bold tracking-[0.2em] text-neon-amber">
+                <Trophy className="h-3 w-3 text-neon-yellow" />
+                <span className="font-mono text-[10px] font-bold tracking-[0.2em] text-neon-yellow">
                   LIVE LEADERBOARD
                 </span>
-                <Trophy className="h-3 w-3 text-neon-amber" />
-                <div className="h-px flex-1 bg-neon-amber/20" />
+                <Trophy className="h-3 w-3 text-neon-yellow" />
+                <div className="h-px flex-1 bg-neon-yellow/20" />
               </div>
             </div>
 
@@ -322,7 +322,7 @@ export function HeroSection() {
                   className="flex items-center gap-4 border-b border-panel-border/30 px-5 py-2.5 last:border-0"
                 >
                   <span className={`font-mono text-sm font-bold ${
-                    entry.rank === 1 ? "text-neon-amber text-glow-amber" :
+                    entry.rank === 1 ? "text-neon-yellow text-glow-yellow" :
                     entry.rank === 2 ? "text-muted-foreground" : "text-muted-foreground"
                   }`}>
                     {entry.rank}
@@ -330,7 +330,7 @@ export function HeroSection() {
                   <div className={`flex h-6 w-6 items-center justify-center border ${
                     entry.icon === "cyan" ? "border-neon-cyan/30 text-neon-cyan" :
                     entry.icon === "pink" ? "border-neon-pink/30 text-neon-pink" :
-                    "border-neon-amber/30 text-neon-amber"
+                    "border-neon-yellow/30 text-neon-yellow"
                   }`}>
                     <Zap className="h-3 w-3" />
                   </div>
@@ -339,7 +339,7 @@ export function HeroSection() {
                   </span>
                   <span className="font-mono text-xs text-muted-foreground">
                     <span className={`font-bold ${
-                      entry.rank === 1 ? "text-neon-amber" :
+                      entry.rank === 1 ? "text-neon-yellow" :
                       entry.rank === 2 ? "text-foreground" : "text-foreground"
                     }`}>{entry.points.toLocaleString()}</span> PTS
                   </span>

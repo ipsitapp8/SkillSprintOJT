@@ -97,7 +97,7 @@ export function DashboardContent() {
           </div>
           <Link
             href="/arena"
-            className="group flex items-center gap-3 border-2 border-neon-cyan bg-neon-cyan/10 px-6 py-3 font-mono text-xs tracking-widest text-neon-cyan transition-all hover:bg-neon-cyan/20 hover:shadow-[0_0_20px_rgba(0,240,255,0.2)]"
+            className="group flex items-center gap-3 border border-neon-cyan bg-neon-cyan/10 px-6 py-3 font-mono text-xs tracking-widest text-neon-cyan transition-all hover:bg-neon-cyan/20 hover:shadow-[0_0_20px_rgba(0,240,255,0.2)]"
           >
             <Swords className="h-4 w-4" />
             ENTER ARENA
@@ -118,7 +118,7 @@ export function DashboardContent() {
             label="PEAK SCORE"
             value={data.stats.highScore.toString()}
             icon={Crown}
-            color="amber"
+            color="yellow"
             sub="PERSONAL BEST"
           />
           <StatCard
@@ -137,87 +137,88 @@ export function DashboardContent() {
           />
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
-          {/* Left column - Performance chart + Quick actions */}
-          <div className="flex flex-col gap-6 lg:col-span-2">
-            <div className="border border-panel-border bg-panel-bg/60 p-6">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <Activity className="h-4 w-4 text-neon-cyan" />
-                  <span className="font-mono text-[11px] tracking-[0.2em] text-foreground">
-                    SCORE PROGRESSION
-                  </span>
-                </div>
-              </div>
-              <PerformanceChart />
-            </div>
-
-            {/* Recent matches */}
-            <div className="border border-panel-border bg-panel-bg/60 p-6">
-              <div className="flex items-center gap-3 mb-6">
-                <Clock className="h-4 w-4 text-neon-pink" />
-                <span className="font-mono text-[11px] tracking-[0.2em] text-foreground">
-                  RECENT LOGS
+        <div className="grid gap-6 lg:grid-cols-3 mb-6">
+          {/* Top Row: Chart (Left) and Sidebar (Right) */}
+          <div className="lg:col-span-2 border border-panel-border bg-panel-bg/60 p-6 flex flex-col">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <Activity className="h-4 w-4 text-neon-cyan" />
+                <span className="font-mono text-[11px] tracking-[0.2em] text-foreground uppercase">
+                  SCORE PROGRESSION
                 </span>
               </div>
-
-              <div className="flex flex-col gap-2">
-                {data.recentAttempts.map((match) => (
-                  <Link
-                    key={match.id}
-                    href={`/results/${match.id}`}
-                    className="flex items-center gap-4 border border-panel-border/50 bg-secondary/20 px-4 py-3 transition-all hover:bg-secondary/30"
-                  >
-                    <div className="flex h-8 w-8 items-center justify-center border border-neon-cyan/30 text-neon-cyan">
-                      <Trophy className="h-3.5 w-3.5" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs font-bold tracking-wider text-foreground truncate">
-                          {match.quiz?.title || "ARENA BATTLE"}
-                        </span>
-                      </div>
-                      <span className="font-mono text-[10px] text-muted-foreground uppercase">
-                        Score: {match.score} // {new Date(match.completedAt).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                  </Link>
-                ))}
-                {data.recentAttempts.length === 0 && (
-                   <div className="py-10 text-center border border-dashed border-panel-border text-muted-foreground font-mono text-xs">NO BATTLE LOGS FOUND. ENTER THE ARENA TO START.</div>
-                )}
-              </div>
+            </div>
+            <div className="flex-1 min-h-[300px]">
+              <PerformanceChart />
             </div>
           </div>
 
-          {/* Right column */}
           <div className="flex flex-col gap-6">
-             <div className="border border-panel-border bg-panel-bg/60 p-6">
+            <div className="flex-1 border border-panel-border bg-panel-bg/60 p-6">
               <div className="flex items-center gap-3 mb-6">
                 <Zap className="h-4 w-4 text-neon-cyan" />
-                <span className="font-mono text-[11px] tracking-[0.2em] text-foreground">
+                <span className="font-mono text-[11px] tracking-[0.2em] text-foreground uppercase">
                   RANKING SYSTEM
                 </span>
               </div>
               <div className="flex flex-col gap-4">
-                  <div className="p-4 border border-neon-amber/20 bg-neon-amber/5">
-                     <span className="block font-mono text-[9px] text-neon-amber mb-1">CURRENT RANK</span>
-                     <span className="font-mono text-xl font-bold text-neon-amber text-glow-amber">VETERAN</span>
-                  </div>
-                  <p className="text-[10px] font-mono text-muted-foreground leading-relaxed">
-                     Complete more matches with high efficiency to upgrade your classification status. 
-                  </p>
+                <div className="group p-4 border border-neon-yellow/20 bg-neon-yellow/5 transition-all duration-300 hover:border-neon-yellow/60 hover:shadow-[0_0_20px_rgba(251,191,36,0.1)]">
+                  <span className="block font-mono text-[9px] text-neon-yellow/60 group-hover:text-neon-yellow mb-1 uppercase transition-colors">CURRENT RANK</span>
+                  <span className="font-mono text-xl font-bold text-neon-yellow/80 group-hover:text-neon-yellow group-hover:text-glow-yellow uppercase transition-all">VETERAN</span>
+                </div>
+                <p className="text-[10px] font-mono text-muted-foreground leading-relaxed">
+                  Complete more matches with high efficiency to upgrade your classification status.
+                </p>
               </div>
             </div>
-            
+
             <Link
-                href="/leaderboard"
-                className="flex items-center justify-center gap-3 border border-panel-border bg-panel-bg/40 px-8 py-4 font-mono text-xs tracking-widest text-muted-foreground hover:border-foreground/20 hover:text-foreground transition-all"
-              >
-                <Trophy className="h-4 w-4" />
-                VIEW LEADERBOARD
+              href="/leaderboard"
+              className="flex-1 flex items-center justify-center gap-3 border border-panel-border bg-panel-bg/40 px-8 py-4 font-mono text-xs tracking-widest text-muted-foreground hover:border-foreground/20 hover:text-foreground transition-all uppercase"
+            >
+              <Trophy className="h-4 w-4" />
+              VIEW LEADERBOARD
             </Link>
+          </div>
+        </div>
+
+        {/* Bottom Row: Recent Logs (Full Width) */}
+        <div className="border border-panel-border bg-panel-bg/60 p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <Clock className="h-4 w-4 text-neon-pink" />
+            <span className="font-mono text-[11px] tracking-[0.2em] text-foreground uppercase">
+              RECENT LOGS
+            </span>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            {data.recentAttempts.map((match) => (
+              <Link
+                key={match.id}
+                href={`/results/${match.id}`}
+                className="flex items-center gap-4 border border-panel-border/50 bg-secondary/20 px-4 py-3 transition-all hover:bg-secondary/30"
+              >
+                <div className="flex h-8 w-8 items-center justify-center border border-neon-cyan/30 text-neon-cyan">
+                  <Trophy className="h-3.5 w-3.5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs font-bold tracking-wider text-foreground truncate uppercase">
+                      {match.quiz?.title || "ARENA BATTLE"}
+                    </span>
+                  </div>
+                  <span className="font-mono text-[10px] text-muted-foreground uppercase">
+                    Score: {match.score} // {new Date(match.completedAt).toLocaleDateString()}
+                  </span>
+                </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </Link>
+            ))}
+            {data.recentAttempts.length === 0 && (
+              <div className="py-10 text-center border border-dashed border-panel-border text-muted-foreground font-mono text-xs uppercase">
+                NO BATTLE LOGS FOUND. ENTER THE ARENA TO START.
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -239,25 +240,37 @@ function StatCard({
   sub: string
 }) {
   const colorClasses = {
-    cyan: "text-neon-cyan border-neon-cyan/20",
-    pink: "text-neon-pink border-neon-pink/20",
-    amber: "text-neon-amber border-neon-amber/20",
-  }
-  const glowClasses = {
-    cyan: "text-glow-cyan",
-    pink: "text-glow-pink",
-    amber: "text-glow-amber",
+    cyan: {
+      border: "border-neon-cyan/20 group-hover:border-neon-cyan",
+      text: "text-neon-cyan/70 group-hover:text-neon-cyan",
+      glow: "group-hover:text-glow-cyan",
+      shadow: "group-hover:shadow-[0_0_20px_rgba(0,240,255,0.15)]"
+    },
+    pink: {
+      border: "border-neon-pink/20 group-hover:border-neon-pink",
+      text: "text-neon-pink/70 group-hover:text-neon-pink",
+      glow: "group-hover:text-glow-pink",
+      shadow: "group-hover:shadow-[0_0_20px_rgba(255,45,111,0.15)]"
+    },
+    yellow: {
+      border: "border-neon-yellow/20 group-hover:border-neon-yellow",
+      text: "text-neon-yellow/70 group-hover:text-neon-yellow",
+      glow: "group-hover:text-glow-yellow",
+      shadow: "group-hover:shadow-[0_0_20px_rgba(255,184,0,0.15)]"
+    }
   }
 
+  const current = colorClasses[color as keyof typeof colorClasses]
+
   return (
-    <div className={`border ${colorClasses[color]} bg-panel-bg/60 p-4 transition-all hover:bg-panel-bg/80`}>
+    <div className={`group border ${current.border} bg-panel-bg/60 p-4 transition-all duration-300 hover:bg-panel-bg/80 ${current.shadow}`}>
       <div className="flex items-center justify-between mb-3">
         <span className="font-mono text-[10px] tracking-[0.2em] text-muted-foreground uppercase">
           {label}
         </span>
-        <Icon className={`h-4 w-4 ${colorClasses[color].split(" ")[0]}`} />
+        <Icon className={`h-4 w-4 ${current.text.split(' ')[0]} transition-colors`} />
       </div>
-      <div className={`font-mono text-2xl font-bold ${colorClasses[color].split(" ")[0]} ${glowClasses[color]}`}>
+      <div className={`font-mono text-2xl font-bold ${current.text} ${current.glow} transition-all`}>
         {value}
       </div>
       <span className="font-mono text-[10px] tracking-wider text-muted-foreground uppercase">

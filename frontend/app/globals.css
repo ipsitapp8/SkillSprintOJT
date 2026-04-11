@@ -39,7 +39,7 @@
   --sidebar-ring: #00f0ff;
   --neon-cyan: #00f0ff;
   --neon-pink: #ff2d6f;
-  --neon-amber: #ffb800;
+  --neon-yellow: #fbbf24;
   --deep-bg: #060610;
   --panel-bg: #0d0f1a;
   --panel-border: #1a1c30;
@@ -86,16 +86,13 @@
   --color-sidebar-ring: var(--sidebar-ring);
   --color-neon-cyan: var(--neon-cyan);
   --color-neon-pink: var(--neon-pink);
-  --color-neon-amber: var(--neon-amber);
+  --color-neon-yellow: var(--neon-yellow);
   --color-deep-bg: var(--deep-bg);
   --color-panel-bg: var(--panel-bg);
   --color-panel-border: var(--panel-border);
 }
 
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
   body {
     @apply bg-background text-foreground;
   }
@@ -126,8 +123,8 @@
   box-shadow: 0 0 15px rgba(255, 45, 111, 0.3), 0 0 40px rgba(255, 45, 111, 0.1);
 }
 
-.glow-amber {
-  box-shadow: 0 0 15px rgba(255, 184, 0, 0.3), 0 0 40px rgba(255, 184, 0, 0.1);
+.glow-yellow {
+  box-shadow: 0 0 10px rgba(251, 191, 36, 0.25), 0 0 25px rgba(251, 191, 36, 0.1);
 }
 
 .text-glow-cyan {
@@ -138,8 +135,8 @@
   text-shadow: 0 0 10px rgba(255, 45, 111, 0.5), 0 0 30px rgba(255, 45, 111, 0.2);
 }
 
-.text-glow-amber {
-  text-shadow: 0 0 10px rgba(255, 184, 0, 0.5), 0 0 30px rgba(255, 184, 0, 0.2);
+.text-glow-yellow {
+  text-shadow: 0 0 8px rgba(251, 191, 36, 0.3), 0 0 20px rgba(251, 191, 36, 0.1);
 }
 
 /* HUD panel clip-path */
