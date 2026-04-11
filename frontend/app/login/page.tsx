@@ -15,6 +15,7 @@ import {
   Zap,
 } from "lucide-react"
 import Link from "next/link"
+import { useAuth } from "@/hooks/useAuth"
 
 function HudCorner({ className }: { className?: string }) {
   return (
@@ -34,6 +35,7 @@ function HudCorner({ className }: { className?: string }) {
 export default function LoginPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { checkAuth, isAuthenticated, isLoading: authLoading } = useAuth()
   const [mode, setMode] = useState<"login" | "signup">(
     searchParams.get("mode") === "signup" ? "signup" : "login"
   )
@@ -44,6 +46,12 @@ export default function LoginPage() {
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      router.push("/")
+    }
+  }, [authLoading, isAuthenticated, router])
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -88,6 +96,7 @@ export default function LoginPage() {
         })
         
         if (loginRes.ok) {
+          await checkAuth()
           router.push("/")
           return
         } else {
@@ -98,7 +107,8 @@ export default function LoginPage() {
         }
       }
 
-      // Login successful — redirect to home
+      // Login successful — sync state and redirect to hero
+      await checkAuth()
       router.push("/")
     } catch (err) {
       console.error(err)
