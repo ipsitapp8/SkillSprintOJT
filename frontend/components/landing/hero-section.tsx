@@ -167,11 +167,11 @@ export function HeroSection() {
               {/* Train Now button */}
               <div className="px-4 pb-4">
                 <Link
-                  href="/sprint"
+                  href="/arena"
                   className="flex items-center justify-center gap-2 border border-neon-cyan/40 bg-neon-cyan/10 px-4 py-3 font-mono text-xs tracking-widest text-neon-cyan transition-all hover:bg-neon-cyan/20 hover:shadow-[0_0_20px_rgba(0,240,255,0.15)]"
                 >
                   <Zap className="h-3.5 w-3.5" />
-                  TRAIN NOW
+                  ENTER ARENA
                 </Link>
               </div>
             </div>
@@ -355,7 +355,7 @@ export function HeroSection() {
         >
           <div className="flex items-center justify-center gap-1 overflow-x-auto">
             {[
-              { label: "DAILY CHALLENGES", href: "/sprint", icon: Flame },
+              { label: "ARENA CHALLENGES", href: "/arena", icon: Flame },
               { label: "BOOSTERS", href: "/dashboard", icon: Zap },
               { label: "QUICKPLAY", href: "/arena", icon: Swords, active: true },
               { label: "LEADERBOARD", href: "/leaderboard", icon: Trophy },
