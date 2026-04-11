@@ -89,7 +89,7 @@ export function RanksSection() {
             className="group relative flex items-center gap-3 border-2 border-neon-cyan bg-neon-cyan/10 px-10 py-4 font-mono text-sm tracking-widest text-neon-cyan transition-all hover:bg-neon-cyan/20 hover:shadow-[0_0_30px_rgba(0,240,255,0.3)]"
           >
             <Zap className="h-4 w-4" />
-            START YOUR FIRST SPRINT
+            START YOUR FIRST ARENA
           </Link>
         </div>
       </div>
