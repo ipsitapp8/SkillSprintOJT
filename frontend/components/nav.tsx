@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { usePathname } from "next/navigation"
 import { Menu, X, Zap, LogOut, User } from "lucide-react"
+import { useAuth } from "@/hooks/useAuth"
 
 const navLinks = [
   { href: "/dashboard", label: "DASHBOARD" },
@@ -14,32 +15,11 @@ const navLinks = [
 
 export function Nav() {
   const [open, setOpen] = useState(false)
-  const [user, setUser] = useState<{id: string, username?: string, email: string} | null>(null)
-  const [loading, setLoading] = useState(true)
-  const router = useRouter()
-
-  useEffect(() => {
-    async function fetchUser() {
-      try {
-        const res = await fetch("http://localhost:8080/api/auth/me", { credentials: "include" })
-        if (res.ok) {
-          const data = await res.json()
-          const userData = data.user ? data.user : data
-          setUser(userData)
-        }
-      } catch (err) {
-        console.error(err)
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchUser()
-  }, [])
+  const { user, isLoading: loading, logout } = useAuth()
+  const pathname = usePathname()
 
   async function handleLogout() {
-    await fetch("http://localhost:8080/api/auth/logout", { method: "POST", credentials: "include" })
-    setUser(null)
-    router.push("/login")
+    await logout()
   }
 
   return (
@@ -76,7 +56,7 @@ export function Nav() {
               <div className="flex items-center gap-2 px-3 py-1.5 border border-neon-cyan/30 bg-neon-cyan/5">
                 <User className="h-4 w-4 text-neon-cyan" />
                 <span className="font-mono text-[11px] font-bold tracking-widest text-neon-cyan uppercase">
-                  {user.username || user.email?.split('@')[0]}
+                  {user.username && !user.username.includes('@') ? user.username : user.email?.split('@')[0]}
                 </span>
               </div>
               <button
@@ -141,7 +121,7 @@ export function Nav() {
                   <div className="flex items-center gap-3 px-4 py-3 border border-neon-cyan/30 bg-neon-cyan/5">
                     <User className="h-4 w-4 text-neon-cyan" />
                     <span className="font-mono text-xs font-bold tracking-widest text-neon-cyan uppercase">
-                      {user.username || user.email?.split('@')[0]}
+                      {user.username && !user.username.includes('@') ? user.username : user.email?.split('@')[0]}
                     </span>
                   </div>
                   <button
