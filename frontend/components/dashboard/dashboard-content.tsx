@@ -9,6 +9,7 @@ import {
   Crown,
   Flame,
   Ghost,
+  Shield,
   Swords,
   Target,
   Timer,
@@ -91,7 +92,7 @@ export function DashboardContent() {
               </span>
             </div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-              WELCOME BACK, <span className="text-neon-cyan text-glow-cyan uppercase">{data.username}</span>
+              WELCOME BACK, <span className="text-neon-cyan text-glow-cyan uppercase">{data.username && !data.username.includes('@') ? data.username : data.email?.split('@')[0]}</span>
             </h1>
           </div>
           <Link
