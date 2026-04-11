@@ -11,9 +11,11 @@ interface TopicCardProps {
   difficulty: "Easy" | "Medium" | "Hard"
   lastScore?: number
   color: "cyan" | "pink" | "yellow"
+  isActive?: boolean
+  onClick?: () => void
 }
 
-export function TopicCard({ title, description, icon: Icon, count, mastery, difficulty, lastScore, color }: TopicCardProps) {
+export function TopicCard({ title, description, icon: Icon, count, mastery, difficulty, lastScore, color, isActive, onClick }: TopicCardProps) {
   const themes = {
     cyan: {
       border: "border-neon-cyan/20 group-hover:border-neon-cyan",
@@ -50,10 +52,18 @@ export function TopicCard({ title, description, icon: Icon, count, mastery, diff
   const theme = themes[color]
 
   return (
-    <div className={`group relative flex flex-col border ${theme.border} bg-panel-bg/40 p-6 transition-all duration-300 hover:-translate-y-1 ${theme.glow} backdrop-blur-sm overflow-hidden h-full`}>
+    <div 
+      onClick={onClick}
+      className={`group relative flex flex-col border ${theme.border} ${isActive ? 'border-opacity-100 bg-white/[0.03] scale-[1.02] shadow-[0_0_30px_rgba(255,255,255,0.05)]' : 'bg-panel-bg/40'} p-6 transition-all duration-300 hover:-translate-y-1 ${theme.glow} backdrop-blur-sm overflow-hidden h-full cursor-pointer`}
+    >
+      {isActive && (
+        <div className={`absolute top-0 right-0 h-10 w-10 overflow-hidden`}>
+           <div className={`absolute top-0 right-0 h-[1px] w-[200%] translate-x-1/2 -rotate-45 ${theme.bar}`} />
+        </div>
+      )}
       {/* Top Meta */}
       <div className="flex items-start justify-between mb-4">
-        <div className={`flex h-10 w-10 items-center justify-center border ${theme.border} ${theme.bg} ${theme.text.split(' ')[0]} transition-all duration-300`}>
+        <div className={`flex h-10 w-10 items-center justify-center border ${isActive ? 'border-opacity-100' : theme.border} ${theme.bg} ${theme.text.split(' ')[0]} transition-all duration-300`}>
           <Icon className="h-5 w-5" strokeWidth={1.5} />
         </div>
         <div className="flex flex-col items-end gap-1.5">

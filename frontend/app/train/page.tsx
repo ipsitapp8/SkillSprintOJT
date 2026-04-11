@@ -17,6 +17,8 @@ import {
   Zap,
   Swords
 } from "lucide-react"
+import { useState } from "react"
+import { useRouter } from "next/navigation"
 
 const topTopics = [
   { 
@@ -72,12 +74,55 @@ const topTopics = [
 ]
 
 const trainingModes = [
-  { title: "MOCK INTERVIEW", description: "Realistic AI-driven interview simulation with live feedback.", icon: UserCheck, duration: "30-min", difficulty: "Intermediate" as const, color: "cyan" as const },
-  { title: "RAPID FIRE", description: "Fast-paced technical trivia to sharpen your reaction speed.", icon: Timer, duration: "5-min", difficulty: "Beginner" as const, color: "yellow" as const },
-  { title: "SOFT SKILLS", description: "Behavioral practice with non-verbal and tonality analysis.", icon: MessageSquare, duration: "15-min", difficulty: "Intermediate" as const, color: "pink" as const },
+  { 
+    title: "PRACTICE MODE", 
+    description: "Lower pressure environment focused on learning and accuracy. Helpful hints enabled.", 
+    icon: Brain, 
+    duration: "Unlimited", 
+    difficulty: "Beginner" as const, 
+    color: "cyan" as const 
+  },
+  { 
+    title: "SPEED MODE", 
+    description: "High-intensity technical drills with strict per-question timers. Focus on instinct.", 
+    icon: Timer, 
+    duration: "5-min", 
+    difficulty: "Advanced" as const, 
+    color: "yellow" as const 
+  },
+  { 
+    title: "TARGET MODE", 
+    description: "Fully customizable session. Select specific sub-topics, difficulty, and question count.", 
+    icon: Target, 
+    duration: "Flexible", 
+    difficulty: "Intermediate" as const, 
+    color: "cyan" as const 
+  },
+  { 
+    title: "MOCK INTERVIEW", 
+    description: "End-to-end simulated technical interview. Mixed domains, live pressure, and AI review.", 
+    icon: UserCheck, 
+    duration: "45-min", 
+    difficulty: "Advanced" as const, 
+    color: "pink" as const,
+    isPremium: true
+  },
 ]
 
 export default function TrainPage() {
+  const router = useRouter()
+  const [selectedTopic, setSelectedTopic] = useState<string | null>(null)
+  const [selectedMode, setSelectedMode] = useState<string | null>(null)
+
+  const handleStart = (modeOverride?: string) => {
+    const topic = selectedTopic
+    const mode = modeOverride || selectedMode
+    
+    if (!topic || !mode) return
+
+    router.push(`/train/session?topic=${encodeURIComponent(topic)}&mode=${encodeURIComponent(mode)}`)
+  }
+
   return (
     <ProtectedRoute>
       <div className="relative min-h-screen">
@@ -127,7 +172,12 @@ export default function TrainPage() {
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
               {topTopics.map((topic) => (
-                <TopicCard key={topic.title} {...topic} />
+                <TopicCard 
+                  key={topic.title} 
+                  {...topic} 
+                  isActive={selectedTopic === topic.title}
+                  onClick={() => setSelectedTopic(topic.title)}
+                />
               ))}
             </div>
           </div>
@@ -141,9 +191,17 @@ export default function TrainPage() {
               </span>
               <div className="h-px flex-1 bg-panel-border" />
             </div>
-            <div className="grid gap-4 lg:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {trainingModes.map((mode) => (
-                <ModeCard key={mode.title} {...mode} />
+                <ModeCard 
+                  key={mode.title} 
+                  {...mode} 
+                  isActive={selectedMode === mode.title}
+                  onClick={() => {
+                    setSelectedMode(mode.title)
+                    if (selectedTopic) handleStart(mode.title)
+                  }}
+                />
               ))}
             </div>
           </div>

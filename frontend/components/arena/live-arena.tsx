@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
-import { useRouter } from "next/navigation"
+import { useEffect, useState, useCallback, useMemo } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import {
   ChevronRight,
   Clock,
@@ -28,6 +28,17 @@ interface Quiz {
 
 export function LiveArena({ arenaId }: { arenaId: string }) {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const mode = searchParams.get("mode") || "STANDARD"
+  
+  // Define timer based on mode
+  const defaultTime = useMemo(() => {
+    const m = mode.toUpperCase()
+    if (m.includes("SPEED")) return 10
+    if (m.includes("PRACTICE")) return 60 // Relaxed
+    return 30 // Standard
+  }, [mode])
+
   const [loading, setLoading] = useState(true)
   const [quiz, setQuiz] = useState<Quiz | null>(null)
   const [questions, setQuestions] = useState<Question[]>([])
@@ -35,7 +46,7 @@ export function LiveArena({ arenaId }: { arenaId: string }) {
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null)
   const [writtenAnswer, setWrittenAnswer] = useState("")
   const [evaluating, setEvaluating] = useState(false)
-  const [timeLeft, setTimeLeft] = useState(30)
+  const [timeLeft, setTimeLeft] = useState(defaultTime)
   const [totalScore, setTotalScore] = useState(0)
   const [answers, setAnswers] = useState<any[]>([])
   const [finished, setFinished] = useState(false)
@@ -85,7 +96,7 @@ export function LiveArena({ arenaId }: { arenaId: string }) {
       setCurrentQ(prev => prev + 1)
       setSelectedOptionId(null)
       setWrittenAnswer("")
-      setTimeLeft(30)
+      setTimeLeft(defaultTime)
     } else {
       setEvaluating(true)
       // Submit Full Attempt
@@ -144,8 +155,10 @@ export function LiveArena({ arenaId }: { arenaId: string }) {
     )
   }
 
-  const timerPercent = (timeLeft / 30) * 100
-  const timerColor = timeLeft > 15 ? "text-neon-cyan" : timeLeft > 7 ? "text-neon-amber" : "text-neon-pink"
+  const timerPercent = (timeLeft / defaultTime) * 100
+  const threshold = defaultTime / 2
+  const danger = defaultTime / 4
+  const timerColor = timeLeft > threshold ? "text-neon-cyan" : timeLeft > danger ? "text-neon-amber" : "text-neon-pink"
 
   return (
     <div className="relative min-h-screen flex flex-col">
@@ -156,9 +169,14 @@ export function LiveArena({ arenaId }: { arenaId: string }) {
         <div className="mx-auto max-w-5xl flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
             <Swords className="h-4 w-4 text-neon-pink" />
-            <span className="font-mono text-[10px] tracking-[0.2em] text-neon-pink uppercase">
-              {quiz?.title || "ARENA"}
-            </span>
+            <div className="flex flex-col">
+              <span className="font-mono text-[10px] tracking-[0.2em] text-neon-pink uppercase leading-tight">
+                {quiz?.title || "ARENA"}
+              </span>
+              <span className="font-mono text-[8px] text-muted-foreground uppercase tracking-widest">
+                MODE: {mode}
+              </span>
+            </div>
           </div>
 
           <div className="flex items-center gap-4">
