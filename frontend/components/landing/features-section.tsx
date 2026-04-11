@@ -12,7 +12,7 @@ const features = [
   },
   {
     icon: Clock,
-    title: "MICRO-SPRINTS",
+    title: "ARENA DRILLS",
     description: "30-second rapid-fire drill sessions. Pure speed, pure accuracy, zero downtime.",
     color: "pink" as const,
     tag: "DAILY",
