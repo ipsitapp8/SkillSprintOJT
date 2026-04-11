@@ -1,26 +1,39 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useRef, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Menu, X, Zap, LogOut, User } from "lucide-react"
+import { Menu, X, Zap, LogOut, User, ChevronDown } from "lucide-react"
 import { useAuth } from "@/hooks/useAuth"
 
 const navLinks = [
   { href: "/dashboard", label: "DASHBOARD" },
   { href: "/arena", label: "ARENA" },
   { href: "/leaderboard", label: "LEADERBOARD" },
-  { href: "/sprint", label: "SPRINT" },
+  { href: "/train", label: "TRAIN" },
 ]
 
 export function Nav() {
   const [open, setOpen] = useState(false)
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
   const { user, isLoading: loading, logout } = useAuth()
   const pathname = usePathname()
 
   async function handleLogout() {
+    setDropdownOpen(false)
     await logout()
   }
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setDropdownOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-neon-cyan/10 bg-deep-bg/60 backdrop-blur-xl">
@@ -39,34 +52,56 @@ export function Nav() {
         </Link>
 
         <div className="hidden items-center gap-0.5 md:flex">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="px-4 py-2 font-mono text-[10px] tracking-[0.15em] text-muted-foreground transition-colors hover:text-neon-cyan border border-transparent hover:border-neon-cyan/10 hover:bg-neon-cyan/5"
-            >
-              {link.label}
-            </Link>
-          ))}
+          {navLinks.map((link) => {
+            const isActive = pathname === link.href
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`px-4 py-2 font-mono text-[10px] tracking-[0.15em] transition-colors border border-transparent hover:border-neon-cyan/10 hover:bg-neon-cyan/5 ${
+                  isActive ? "text-neon-cyan bg-neon-cyan/5 border-neon-cyan/20" : "text-muted-foreground hover:text-neon-cyan"
+                }`}
+              >
+                {link.label}
+              </Link>
+            )
+          })}
         </div>
 
         <div className="hidden items-center gap-3 md:flex">
           {!loading && user ? (
-            <>
-              <div className="flex items-center gap-2 px-3 py-1.5 border border-neon-cyan/30 bg-neon-cyan/5">
+            <div className="relative" ref={dropdownRef}>
+              <button
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+                className="flex items-center gap-2 px-3 py-1.5 border border-neon-cyan/30 bg-neon-cyan/5 hover:bg-neon-cyan/10 transition-colors group"
+              >
                 <User className="h-4 w-4 text-neon-cyan" />
                 <span className="font-mono text-[11px] font-bold tracking-widest text-neon-cyan uppercase">
                   {user.username && !user.username.includes('@') ? user.username : user.email?.split('@')[0]}
                 </span>
-              </div>
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-2 px-4 py-2 font-mono text-[10px] tracking-widest text-muted-foreground transition-colors hover:text-neon-pink"
-              >
-                <LogOut className="h-3 w-3" />
-                LOG OUT
+                <ChevronDown className={`h-3 w-3 text-neon-cyan/50 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
               </button>
-            </>
+              
+              {dropdownOpen && (
+                <div className="absolute right-0 mt-2 w-40 border border-neon-cyan/20 bg-deep-bg/95 backdrop-blur-xl py-1 shadow-[0_10px_30px_rgba(0,0,0,0.5)] z-50">
+                  <Link
+                    href="/profile"
+                    onClick={() => setDropdownOpen(false)}
+                    className="flex w-full items-center gap-2 px-4 py-2 font-mono text-[10px] tracking-widest text-muted-foreground transition-colors hover:text-neon-cyan hover:bg-neon-cyan/5"
+                  >
+                    <User className="h-3 w-3" />
+                    PROFILE
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="flex w-full items-center gap-2 px-4 py-2 font-mono text-[10px] tracking-widest text-muted-foreground transition-colors hover:text-neon-pink hover:bg-neon-pink/5"
+                  >
+                    <LogOut className="h-3 w-3" />
+                    LOG OUT
+                  </button>
+                </div>
+              )}
+            </div>
           ) : !loading && !user ? (
             <>
               <Link
@@ -82,10 +117,10 @@ export function Nav() {
                 SIGN UP
               </Link>
               <Link
-                href="/arena"
+                href="/train"
                 className="border border-neon-cyan/50 bg-neon-cyan/10 px-5 py-2 font-mono text-[10px] tracking-widest text-neon-cyan transition-all hover:bg-neon-cyan/20 hover:shadow-[0_0_20px_rgba(0,240,255,0.15)]"
               >
-                ENTER ARENA
+                TRAIN NOW
               </Link>
             </>
           ) : (
@@ -149,11 +184,11 @@ export function Nav() {
                     SIGN UP
                   </Link>
                   <Link
-                    href="/arena"
+                    href="/train"
                     onClick={() => setOpen(false)}
                     className="border border-neon-cyan/50 bg-neon-cyan/10 px-5 py-3 text-center font-mono text-xs tracking-widest text-neon-cyan"
                   >
-                    ENTER ARENA
+                    TRAIN NOW
                   </Link>
                 </>
               ) : (
