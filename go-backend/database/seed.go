@@ -11,103 +11,68 @@ import (
 func SeedDB() {
 	var count int64
 	DB.Model(&models.Arena{}).Count(&count)
-	if count > 0 {
-		return // Data already exists
+	if count > 4 {
+		return // Data already seeded
 	}
 
-	log.Println("Seeding initial Arena data...")
+	log.Println("Seeding training modules data...")
 
 	// Categories
-	cyberCat := models.QuizCategory{ID: uuid.New().String(), Name: "Cyber Security", Slug: "cyber-security"}
-	codingCat := models.QuizCategory{ID: uuid.New().String(), Name: "Programming", Slug: "programming"}
-	DB.Create(&cyberCat)
-	DB.Create(&codingCat)
+	catSoftware := models.QuizCategory{ID: uuid.New().String(), Name: "Software Engineering", Slug: "software-engineering"}
+	catAptitude := models.QuizCategory{ID: uuid.New().String(), Name: "Aptitude", Slug: "aptitude"}
+	DB.Create(&catSoftware)
+	DB.Create(&catAptitude)
 
-	// Arenas
-	arena1 := models.Arena{
-		ID:              uuid.New().String(),
-		Title:           "Cybersecurity Fundamentals",
-		Slug:            "cybersecurity-fundamentals",
-		CategoryID:      cyberCat.ID,
-		Difficulty:      "Intermediate",
-		Status:          "live",
-		MaxPlayers:      1000,
-		CurrentPlayers:  124,
-		DurationSeconds: 600,
-		Description:     "Test your knowledge of firewalls, encryption, and network threats.",
+	arenas := []models.Arena{
+		{ID: "dsa_arena", Title: "DSA Speed Relay", Slug: "dsa-arena", CategoryID: catSoftware.ID, Difficulty: "Medium", Status: "live"},
+		{ID: "dbms_arena", Title: "DBMS Optimizer", Slug: "dbms-arena", CategoryID: catSoftware.ID, Difficulty: "Medium", Status: "live"},
+		{ID: "os_arena", Title: "OS Deadlock Escape", Slug: "os-arena", CategoryID: catSoftware.ID, Difficulty: "Hard", Status: "live"},
+		{ID: "js_arena", Title: "JavaScript Syntax", Slug: "js-arena", CategoryID: catSoftware.ID, Difficulty: "Medium", Status: "live"},
+		{ID: "aptitude_arena", Title: "Cognitive Relay", Slug: "aptitude-arena", CategoryID: catAptitude.ID, Difficulty: "Intermediate", Status: "live"},
 	}
-	arena2 := models.Arena{
-		ID:              uuid.New().String(),
-		Title:           "Advanced Go Programming",
-		Slug:            "advanced-go",
-		CategoryID:      codingCat.ID,
-		Difficulty:      "Hard",
-		Status:          "open",
-		MaxPlayers:      500,
-		CurrentPlayers:  45,
-		DurationSeconds: 900,
-		Description:     "Prove your mastery over Goroutines, Contexts, and Go syntax.",
-	}
-	DB.Create(&arena1)
-	DB.Create(&arena2)
 
-	// Quizzes
-	q1 := models.Quiz{
-		ID:         uuid.New().String(),
-		Title:      "Network Defense",
-		ArenaID:    arena1.ID,
-		CategoryID: cyberCat.ID,
-		Difficulty: "Intermediate",
-		IsActive:   true,
-	}
-	q2 := models.Quiz{
-		ID:         uuid.New().String(),
-		Title:      "Go Concurrency",
-		ArenaID:    arena2.ID,
-		CategoryID: codingCat.ID,
-		Difficulty: "Hard",
-		IsActive:   true,
-	}
-	DB.Create(&q1)
-	DB.Create(&q2)
+	for _, a := range arenas {
+		DB.Create(&a)
+		// Give each arena an active quiz
+		q := models.Quiz{
+			ID:         uuid.New().String(),
+			Title:      a.Title + " Module",
+			ArenaID:    a.ID,
+			CategoryID: a.CategoryID,
+			Difficulty: a.Difficulty,
+			IsActive:   true,
+		}
+		DB.Create(&q)
 
-	// Questions for Network Defense
-	qn1 := models.Question{
-		ID:            uuid.New().String(),
-		QuizID:        q1.ID,
-		Prompt:        "Which protocol is used for secure communication over a computer network?",
-		Type:          "mcq",
-		CorrectAnswer: "", // Handled by options
-		Explanation:   "HTTPS is HTTP with encryption and verification.",
-		MaxScore:      10,
+		// Seed a quick dummy question so backend doesn't return empty array if queried directly
+		qn := models.Question{
+			ID:            uuid.New().String(),
+			QuizID:        q.ID,
+			Prompt:        "Neural diagnostic complete. Start primary sync?",
+			Type:          "mcq",
+			CorrectAnswer: "",
+			Explanation:   "System primed.",
+			MaxScore:      10,
+		}
+		DB.Create(&qn)
+		DB.Create(&models.Option{ID: uuid.New().String(), QuestionID: qn.ID, Text: "Yes", IsCorrect: true})
+		DB.Create(&models.Option{ID: uuid.New().String(), QuestionID: qn.ID, Text: "No", IsCorrect: false})
 	}
-	DB.Create(&qn1)
-	DB.Create(&models.Option{ID: uuid.New().String(), QuestionID: qn1.ID, Text: "HTTP", IsCorrect: false})
-	DB.Create(&models.Option{ID: uuid.New().String(), QuestionID: qn1.ID, Text: "HTTPS", IsCorrect: true})
-	DB.Create(&models.Option{ID: uuid.New().String(), QuestionID: qn1.ID, Text: "FTP", IsCorrect: false})
-	DB.Create(&models.Option{ID: uuid.New().String(), QuestionID: qn1.ID, Text: "SMTP", IsCorrect: false})
 
-	qn2 := models.Question{
-		ID:            uuid.New().String(),
-		QuizID:        q1.ID,
-		Prompt:        "Explain how a SQL injection attack works.",
-		Type:          "subjective",
-		CorrectAnswer: "A SQL injection attack involves inserting unescaped user input into a database query. It allows the attacker to view, modify, or delete data unexpectedly.",
-		Explanation:   "By manipulating input fields with SQL commands, attackers force the database to execute unintended instructions.",
-		MaxScore:      20,
+	// Make sure a dummy user exists
+	var userCount int64
+	DB.Model(&models.User{}).Where("username = ?", "RIVAL_X").Count(&userCount)
+	if userCount == 0 {
+		dummyUser := models.User{
+			ID:        uuid.New().String(),
+			Email:     "dummy@skillsprint.io",
+			Password:  "password",
+			Username:  "RIVAL_X",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+		DB.Create(&dummyUser)
 	}
-	DB.Create(&qn2)
-
-	// Need a dummy user for the attempt to not crash if foreign keys enabled
-	dummyUser := models.User{
-		ID:        uuid.New().String(),
-		Email:     "dummy@skillsprint.io",
-		Password:  "password",
-		Username:  "RIVAL_X",
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-	}
-	DB.Create(&dummyUser)
 
 	log.Println("Seed complete.")
 }

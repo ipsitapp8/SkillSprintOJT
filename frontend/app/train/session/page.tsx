@@ -10,6 +10,8 @@ export default function SessionInitPage() {
   const searchParams = useSearchParams()
   const topic = searchParams.get("topic")
   const mode = searchParams.get("mode")
+  const difficulty = searchParams.get("difficulty") || "Medium"
+  const count = searchParams.get("count") || "10"
   
   const [status, setStatus] = useState("INITIALIZING NEURAL LINK...")
   const [error, setError] = useState<string | null>(null)
@@ -43,10 +45,10 @@ export default function SessionInitPage() {
         setStatus(`SYNCHRONIZING ${mode.toUpperCase()} CONFIGURATION...`)
         
         // Simulate high-tech delay for vibe
-        await new Promise(r => setTimeout(r, 1500))
+        await new Promise(r => setTimeout(r, 2000))
 
-        // 3. Redirect to the arena play page with the mode
-        router.push(`/arena/${match.id}/play?mode=${encodeURIComponent(mode)}`)
+        // 3. Redirect to the specialized training play page with the config
+        router.push(`/train/play/${match.id}?topic=${encodeURIComponent(topic)}&mode=${encodeURIComponent(mode)}&difficulty=${difficulty}&count=${count}`)
 
       } catch (err: any) {
         setError(err.message || "UNABLE TO INITIALIZE SESSION")
@@ -104,7 +106,7 @@ export default function SessionInitPage() {
                 
                 <p className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest leading-relaxed opacity-60">
                   Topic: {topic} // Mode: {mode} <br />
-                  LATENCY: SELECTIVE // ENCRYPTION: ACTIVE
+                  Intensity: {difficulty} // Stack: {count} Qs
                 </p>
               </div>
             </>

@@ -52,6 +52,8 @@ func main() {
 		protected.POST("/attempts", handlers.SubmitAttempt)
 		protected.GET("/attempts/:id", handlers.GetAttemptResult)
 		protected.POST("/evaluate-answer", handlers.EvaluateAnswer)
+		protected.POST("/training/verify", handlers.VerifyAnswer)
+		protected.POST("/training/generate", handlers.GenerateTrainingSession)
 	}
 
 	log.Println("Starting Gin server on :8080")
