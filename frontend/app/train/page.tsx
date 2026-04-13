@@ -127,6 +127,7 @@ export default function TrainPage() {
   const [aiCount, setAiCount] = useState<number>(5)
   const [aiLoading, setAiLoading] = useState(false)
   const [aiError, setAiError] = useState<string | null>(null)
+  const [aiDebugInfo, setAiDebugInfo] = useState<{ isRealAI: boolean; provider: string } | null>(null)
 
   const handleGenerateAI = async () => {
     if (!aiTopic.trim()) {
@@ -136,22 +137,46 @@ export default function TrainPage() {
     setAiError(null)
     setAiLoading(true)
 
+    console.log("Calling AI API")
+
     try {
-      const res = await fetch("/api/ai/generate", {
+      const payload = { topic: aiTopic, difficulty: aiDifficulty, questionCount: aiCount }
+      const res = await fetch("/api/train/generate-ai-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic: aiTopic, difficulty: aiDifficulty, count: aiCount })
+        body: JSON.stringify(payload)
       })
 
       if (!res.ok) throw new Error("AI Endpoint uncoupled.")
 
+      console.log("Response received. Status:", res.status)
       const data = await res.json()
+      
       if (!data.questions || data.questions.length === 0) throw new Error("Null generation matrix.")
 
       sessionStorage.setItem("skillsprint_pending_ai_session", JSON.stringify(data.questions))
       router.push(`/train/play/synthetic_ai?topic=${encodeURIComponent("AI: " + aiTopic)}&mode=AI_SYNTH_MODE&difficulty=${encodeURIComponent(aiDifficulty)}`)
     } catch (err: any) {
-      setAiError(err.message || "GENERATION FAILURE. RETRY OR USE PHASE 01.")
+      console.log("Fallback triggered")
+      setAiError("AI unavailable, using fallback")
+      
+      // Inline Fallback Generator
+      const mockQuestions = Array.from({ length: aiCount }).map((_, i) => ({
+        id: `AI_SYNTH_FALLBACK_${Math.random().toString(36).substring(7)}_${i}`,
+        type: "mcq",
+        prompt: `[ OFFLINE MOCK ]: Analyze this ${aiDifficulty} ${aiTopic} architectural implementation. Which logic branch optimizes process handling correctly? (Variant ${i + 1})`,
+        options: [
+          { id: "OPT_1", text: "Implement standardized execution wrappers." },
+          { id: "OPT_2", text: "Utilize optimized heuristic data structures." },
+          { id: "OPT_3", text: "Isolate faulty neural paths safely." },
+          { id: "OPT_4", text: "Force kernel panic to dump logs." }
+        ],
+        expectedAnswer: i % 2 === 0 ? "OPT_2" : "OPT_1",
+        explanation: `In a ${aiDifficulty} environment dealing with ${aiTopic}, this option correctly stabilizes the node without causing memory leakages.`
+      }))
+      
+      sessionStorage.setItem("skillsprint_pending_ai_session", JSON.stringify(mockQuestions))
+      router.push(`/train/play/synthetic_ai?topic=${encodeURIComponent("AI Fallback: " + aiTopic)}&mode=MOCK_MODE&difficulty=${encodeURIComponent(aiDifficulty)}`)
     } finally {
       setAiLoading(false)
     }
@@ -388,6 +413,11 @@ export default function TrainPage() {
                 {aiError && (
                   <div className="font-mono text-[10px] text-neon-pink uppercase tracking-widest mt-2 px-3 py-1 bg-neon-pink/10 border border-neon-pink/20">
                     {aiError}
+                  </div>
+                )}
+                {aiDebugInfo && (
+                  <div className={`mt-2 px-3 py-1 font-mono text-[10px] font-bold border tracking-widest ${aiDebugInfo.isRealAI ? 'bg-green-500/10 text-green-400 border-green-500/20' : 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20'}`}>
+                    {aiDebugInfo.isRealAI ? '[ REAL AI MODE ]' : '[ FALLBACK MODE ]'} - {aiDebugInfo.provider}
                   </div>
                 )}
               </div>

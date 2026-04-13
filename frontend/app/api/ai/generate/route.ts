@@ -28,7 +28,11 @@ export async function POST(request: Request) {
     // 1. Check if AI Provider is properly configured
     if (!genAI || !apiKey) {
       console.warn("[AI Provider] Model unconfigured or GEMINI_API_KEY missing. Diverting to mock fallback.");
-      return NextResponse.json({ questions: getMockQuestions(fallbackTopic, activeDifficulty, numQuestions) });
+      return NextResponse.json({ 
+        questions: getMockQuestions(fallbackTopic, activeDifficulty, numQuestions),
+        isRealAI: false,
+        provider: "Mock Fallback"
+      });
     }
 
     // 2. Format systemic prompt
@@ -79,17 +83,29 @@ export async function POST(request: Request) {
         id: `AI_SYNTH_${Math.random().toString(36).substring(7)}_${index}`
       }));
 
-      return NextResponse.json({ questions: normalizedQs });
+      return NextResponse.json({ 
+        questions: normalizedQs,
+        isRealAI: true,
+        provider: "Google Gemini"
+      });
     } catch (parseErr) {
       console.error("[AI Parser Error] Failed to reconstruct AI output strictly:", parseErr);
       // Failsafe immediately triggers
-      return NextResponse.json({ questions: getMockQuestions(fallbackTopic, fallbackDifficulty, fallbackCount) });
+      return NextResponse.json({ 
+        questions: getMockQuestions(fallbackTopic, fallbackDifficulty, fallbackCount),
+        isRealAI: false,
+        provider: "Mock Fallback (Parse Error)"
+      });
     }
 
   } catch (err: any) {
     console.error("[AI Generation Network Error]:", err);
     // Absolute Failsafe triggers if rate limit exceeded or backend unreachable
-    return NextResponse.json({ questions: getMockQuestions(fallbackTopic, fallbackDifficulty, fallbackCount) });
+    return NextResponse.json({ 
+      questions: getMockQuestions(fallbackTopic, fallbackDifficulty, fallbackCount),
+      isRealAI: false,
+      provider: "Mock Fallback (Network Error)"
+    });
   }
 }
 
