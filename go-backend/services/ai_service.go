@@ -192,10 +192,10 @@ Rules:
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	// 4. POST to gemini-1.5-flash with 30s timeout
-	// Using v1 instead of v1beta for better endpoint stability
+	// 4. POST to gemini-2.5-flash with 30s timeout
+	// Verifying availability: gemini-2.5-flash is the stable multimodal model in this environment.
 	url := fmt.Sprintf(
-		"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=%s",
+		"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=%s",
 		apiKey,
 	)
 
@@ -204,7 +204,7 @@ Rules:
 	if len(apiKey) > 8 {
 		maskedKey = apiKey[:4] + "...." + apiKey[len(apiKey)-4:]
 	}
-	log.Printf("[AI] Calling Gemini v1: target_count=%d key=%s", count, maskedKey)
+	log.Printf("[AI] Calling Gemini v1beta: model=gemini-2.5-flash target_count=%d key=%s", count, maskedKey)
 
 	client := &http.Client{Timeout: 30 * time.Second}
 	resp, err := client.Post(url, "application/json", bytes.NewBuffer(jsonData))
@@ -215,7 +215,7 @@ Rules:
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		log.Printf("[AI] ERROR: Gemini API returned status %d. URL used: https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent", resp.StatusCode)
+		log.Printf("[AI] ERROR: Gemini API returned status %d. URL used: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent", resp.StatusCode)
 		return nil, fmt.Errorf("gemini API error: status %d", resp.StatusCode)
 	}
 

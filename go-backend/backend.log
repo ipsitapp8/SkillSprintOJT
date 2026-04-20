@@ -1,5 +1,5 @@
-2026/04/20 12:04:08 [ENV] Successfully loaded configuration from .env
-2026/04/20 12:04:08 Database connection established (WAL mode enabled)
+2026/04/20 12:21:36 [ENV] Successfully loaded configuration from .env
+2026/04/20 12:21:36 Database connection established (WAL mode enabled)
 [GIN-debug] [WARNING] Creating an Engine instance with the Logger and Recovery middleware already attached.
 
 [GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
@@ -24,392 +24,178 @@
 [GIN-debug] POST   /api/training/verify      --> backend/handlers.VerifyAnswer (5 handlers)
 [GIN-debug] POST   /api/training/generate    --> backend/handlers.GenerateTrainingSession (5 handlers)
 [GIN-debug] GET    /api/training/session/:id --> backend/handlers.GetTrainingSession (5 handlers)
-2026/04/20 12:04:08 Starting Gin server on :8080
+2026/04/20 12:21:36 Starting Gin server on :8080
 [GIN-debug] [WARNING] You trusted all proxies, this is NOT safe. We recommend you to set a value.
 Please check https://github.com/gin-gonic/gin/blob/master/docs/doc.md#dont-trust-all-proxies for details.
 [GIN-debug] Listening and serving HTTP on :8080
-[GIN] 2026/04/20 - 12:05:03 | 200 |  523.9µs |             ::1 | GET      "/api/auth/me"
-[GIN] 2026/04/20 - 12:10:38 | 204 |       0s |             ::1 | OPTIONS  "/api/training/generate"
-2026/04/20 12:10:38 [AI] Start: topic=dbms difficulty=medium count=15
-2026/04/20 12:10:38 [AI] Calling Gemini v1: target_count=15 key=AIza....Vxm0
-2026/04/20 12:10:39 [AI] ERROR: Gemini API returned status 404. URL used: https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent
-2026/04/20 12:10:39 [AI] ERROR: First call failed: gemini API error: status 404
-2026/04/20 12:10:39 [AI] RETRY: Attempting to fill gap of 15 questions
-2026/04/20 12:10:39 [AI] Start: topic=dbms difficulty=medium count=15
-2026/04/20 12:10:39 [AI] Calling Gemini v1: target_count=15 key=AIza....Vxm0
-2026/04/20 12:10:39 [AI] ERROR: Gemini API returned status 404. URL used: https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent
-2026/04/20 12:10:39 [AI] ERROR: Retry call failed: gemini API error: status 404
-2026/04/20 12:10:39 [AI_QUOTA_FAIL] requested=15 min_ai=9 actual_ai=0
-2026/04/20 12:10:39 [FALLBACK] Pulling 15 questions from DB vault
-2026/04/20 12:10:39 [TrainingRepo] Available questions: topic=dbms difficulty=medium total=37 requested=25
-2026/04/20 12:10:39 [TrainingRepo] Selected: id=112 prompt="Explain the difference between a clustered and a non-cluster..."
-2026/04/20 12:10:39 [TrainingRepo] Selected: id=129 prompt="Given: employees(id, dept_id, salary).\nWhat does this query ..."
-2026/04/20 12:10:39 [TrainingRepo] Selected: id=15 prompt="What type of JOIN returns all rows from both tables, with NU..."
-2026/04/20 12:10:39 [TrainingRepo] Selected: id=121 prompt="Which normal form eliminates transitive dependencies?"
-2026/04/20 12:10:39 [TrainingRepo] Final summary | unique_questions=4 | repeated_ids_skipped=0 | repeated_prompts_skipped=21 | total_available=37
-2026/04/20 12:10:39 [COUNT] requested=15 ai_first=0 ai_retry=0 ai_total=0 fallback_added=4 final_returned=4
-2026/04/20 12:10:39 [DEDUP] removed_duplicates=0
-2026/04/20 12:10:39 [VARIETY] repeated_prompt_rejections=0
-[GIN] 2026/04/20 - 12:10:39 | 200 | 620.36ms |             ::1 | POST     "/api/training/generate"
-[GIN] 2026/04/20 - 12:10:39 | 204 |   1.51ms |             ::1 | OPTIONS  "/api/train/session/c46d7491-e0b3-4f4f-8482-af6c7c7c9d7d"
-2026/04/20 12:10:39 [SESSION_FETCH] id: c46d7491-e0b3-4f4f-8482-af6c7c7c9d7d
-2026/04/20 12:10:39 [TrainingRepo] Session retrieved | session_id=c46d7491-e0b3-4f4f-8482-af6c7c7c9d7d topic=dbms questions=4
-2026/04/20 12:10:39 [SESSION_FETCH] found: c46d7491-e0b3-4f4f-8482-af6c7c7c9d7d
-2026/04/20 12:10:39 [SESSION_FETCH] question count: 4
-[GIN] 2026/04/20 - 12:10:39 | 200 |   1.04ms |             ::1 | GET      "/api/train/session/c46d7491-e0b3-4f4f-8482-af6c7c7c9d7d"
-2026/04/20 12:10:39 [SESSION_FETCH] id: c46d7491-e0b3-4f4f-8482-af6c7c7c9d7d
-2026/04/20 12:10:39 [TrainingRepo] Session retrieved | session_id=c46d7491-e0b3-4f4f-8482-af6c7c7c9d7d topic=dbms questions=4
-2026/04/20 12:10:39 [SESSION_FETCH] found: c46d7491-e0b3-4f4f-8482-af6c7c7c9d7d
-2026/04/20 12:10:39 [SESSION_FETCH] question count: 4
-[GIN] 2026/04/20 - 12:10:39 | 200 |  505.4µs |             ::1 | GET      "/api/train/session/c46d7491-e0b3-4f4f-8482-af6c7c7c9d7d"
-[GIN] 2026/04/20 - 12:11:49 | 200 |   1.06ms |             ::1 | GET      "/api/auth/me"
-[GIN] 2026/04/20 - 12:12:28 | 200 |   1.03ms |             ::1 | GET      "/api/auth/me"
-[GIN] 2026/04/20 - 12:12:36 | 204 |       0s |             ::1 | OPTIONS  "/api/training/generate"
-2026/04/20 12:12:36 [AI] Start: topic=dbms difficulty=medium count=15
-2026/04/20 12:12:36 [AI] Calling Gemini v1: target_count=15 key=AIza....Vxm0
-2026/04/20 12:12:37 [AI] ERROR: Gemini API returned status 404. URL used: https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent
-2026/04/20 12:12:37 [AI] ERROR: First call failed: gemini API error: status 404
-2026/04/20 12:12:37 [AI] RETRY: Attempting to fill gap of 15 questions
-2026/04/20 12:12:37 [AI] Start: topic=dbms difficulty=medium count=15
-2026/04/20 12:12:37 [AI] Calling Gemini v1: target_count=15 key=AIza....Vxm0
-2026/04/20 12:12:37 [AI] ERROR: Gemini API returned status 404. URL used: https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent
-2026/04/20 12:12:37 [AI] ERROR: Retry call failed: gemini API error: status 404
-2026/04/20 12:12:37 [AI_QUOTA_FAIL] requested=15 min_ai=9 actual_ai=0
-2026/04/20 12:12:37 [FALLBACK] Pulling 15 questions from DB vault
-2026/04/20 12:12:37 [TrainingRepo] Available questions: topic=dbms difficulty=medium total=37 requested=25
-2026/04/20 12:12:37 [TrainingRepo] Selected: id=114 prompt="Given: employees(id, dept_id, salary).\nWhat does this query ..."
-2026/04/20 12:12:37 [TrainingRepo] Selected: id=15 prompt="What type of JOIN returns all rows from both tables, with NU..."
-2026/04/20 12:12:37 [TrainingRepo] Selected: id=13 prompt="Which normal form eliminates transitive dependencies?"
-2026/04/20 12:12:37 [TrainingRepo] Selected: id=119 prompt="Explain the difference between a clustered and a non-cluster..."
-2026/04/20 12:12:37 [TrainingRepo] Final summary | unique_questions=4 | repeated_ids_skipped=0 | repeated_prompts_skipped=21 | total_available=37
-2026/04/20 12:12:37 [COUNT] requested=15 ai_first=0 ai_retry=0 ai_total=0 fallback_added=4 final_returned=4
-2026/04/20 12:12:37 [DEDUP] removed_duplicates=0
-2026/04/20 12:12:37 [VARIETY] repeated_prompt_rejections=0
-[GIN] 2026/04/20 - 12:12:37 | 200 | 450.53ms |             ::1 | POST     "/api/training/generate"
-[GIN] 2026/04/20 - 12:12:37 | 204 |       0s |             ::1 | OPTIONS  "/api/train/session/8379a50c-ba86-444d-a3b7-9aa945f9ff8e"
-2026/04/20 12:12:37 [SESSION_FETCH] id: 8379a50c-ba86-444d-a3b7-9aa945f9ff8e
-2026/04/20 12:12:37 [TrainingRepo] Session retrieved | session_id=8379a50c-ba86-444d-a3b7-9aa945f9ff8e topic=dbms questions=4
-2026/04/20 12:12:37 [SESSION_FETCH] found: 8379a50c-ba86-444d-a3b7-9aa945f9ff8e
-2026/04/20 12:12:37 [SESSION_FETCH] question count: 4
-[GIN] 2026/04/20 - 12:12:37 | 200 |       0s |             ::1 | GET      "/api/train/session/8379a50c-ba86-444d-a3b7-9aa945f9ff8e"
-[GIN] 2026/04/20 - 12:12:37 | 204 |       0s |             ::1 | OPTIONS  "/api/train/session/8379a50c-ba86-444d-a3b7-9aa945f9ff8e"
-2026/04/20 12:12:37 [SESSION_FETCH] id: 8379a50c-ba86-444d-a3b7-9aa945f9ff8e
-2026/04/20 12:12:37 [TrainingRepo] Session retrieved | session_id=8379a50c-ba86-444d-a3b7-9aa945f9ff8e topic=dbms questions=4
-2026/04/20 12:12:37 [SESSION_FETCH] found: 8379a50c-ba86-444d-a3b7-9aa945f9ff8e
-2026/04/20 12:12:37 [SESSION_FETCH] question count: 4
-[GIN] 2026/04/20 - 12:12:37 | 200 |       0s |             ::1 | GET      "/api/train/session/8379a50c-ba86-444d-a3b7-9aa945f9ff8e"
-[GIN] 2026/04/20 - 12:13:02 | 204 |       0s |             ::1 | OPTIONS  "/api/attempts"
+[GIN] 2026/04/20 - 12:21:46 | 204 |       0s |             ::1 | OPTIONS  "/api/attempts"
 
-2026/04/20 12:13:02 [31;1mC:/Users/ipsit/Desktop/final_ojt_project/SkillSprintOJT/go-backend/handlers/attempt.go:60 [35;1mrecord not found
-[0m[33m[1.532ms] [34;1m[rows:0][0m SELECT * FROM `questions` WHERE id = "119" ORDER BY `questions`.`id` LIMIT 1
-2026/04/20 12:13:02 [AttemptSave] Training match: ID=119 correct=false score=0
+2026/04/20 12:21:46 [31;1mC:/Users/ipsit/Desktop/final_ojt_project/SkillSprintOJT/go-backend/handlers/attempt.go:60 [35;1mrecord not found
+[0m[33m[0.000ms] [34;1m[rows:0][0m SELECT * FROM `questions` WHERE id = "23" ORDER BY `questions`.`id` LIMIT 1
+2026/04/20 12:21:46 [AttemptSave] Training match: ID=23 correct=false score=0
 
-2026/04/20 12:13:02 [31;1mC:/Users/ipsit/Desktop/final_ojt_project/SkillSprintOJT/go-backend/handlers/attempt.go:60 [35;1mrecord not found
+2026/04/20 12:21:46 [31;1mC:/Users/ipsit/Desktop/final_ojt_project/SkillSprintOJT/go-backend/handlers/attempt.go:60 [35;1mrecord not found
+[0m[33m[0.741ms] [34;1m[rows:0][0m SELECT * FROM `questions` WHERE id = "24" ORDER BY `questions`.`id` LIMIT 1
+2026/04/20 12:21:46 [AttemptSave] Training match: ID=24 correct=false score=0
+
+2026/04/20 12:21:46 [31;1mC:/Users/ipsit/Desktop/final_ojt_project/SkillSprintOJT/go-backend/handlers/attempt.go:60 [35;1mrecord not found
+[0m[33m[0.000ms] [34;1m[rows:0][0m SELECT * FROM `questions` WHERE id = "25" ORDER BY `questions`.`id` LIMIT 1
+2026/04/20 12:21:46 [AttemptSave] Training match: ID=25 correct=false score=0
+
+2026/04/20 12:21:46 [31;1mC:/Users/ipsit/Desktop/final_ojt_project/SkillSprintOJT/go-backend/handlers/attempt.go:60 [35;1mrecord not found
+[0m[33m[0.000ms] [34;1m[rows:0][0m SELECT * FROM `questions` WHERE id = "29" ORDER BY `questions`.`id` LIMIT 1
+2026/04/20 12:21:46 [AttemptSave] Training match: ID=29 correct=false score=0
+[GIN] 2026/04/20 - 12:21:46 | 200 |    6.8ms |             ::1 | POST     "/api/attempts"
+[GIN] 2026/04/20 - 12:21:57 | 200 |   2.78ms |             ::1 | GET      "/api/auth/me"
+2026/04/20 12:23:10 [AI] Start: topic=dbms difficulty=medium count=15
+2026/04/20 12:23:10 [AI] Calling Gemini v1beta: model=gemini-2.5-flash target_count=15 key=AIza....Vxm0
+2026/04/20 12:23:11 [AI] ERROR: Gemini API returned status 503. URL used: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
+2026/04/20 12:23:11 [AI] ERROR: First call failed: gemini API error: status 503
+2026/04/20 12:23:11 [AI] RETRY: Attempting to fill gap of 15 questions
+2026/04/20 12:23:11 [AI] Start: topic=dbms difficulty=medium count=15
+2026/04/20 12:23:11 [AI] Calling Gemini v1beta: model=gemini-2.5-flash target_count=15 key=AIza....Vxm0
+2026/04/20 12:23:28 [AI] ERROR: Gemini API returned status 503. URL used: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
+2026/04/20 12:23:28 [AI] ERROR: Retry call failed: gemini API error: status 503
+2026/04/20 12:23:28 [AI_QUOTA_FAIL] requested=15 min_ai=9 actual_ai=0
+2026/04/20 12:23:28 [FALLBACK] Pulling 15 questions from DB vault
+2026/04/20 12:23:28 [TrainingRepo] Available questions: topic=dbms difficulty=medium total=37 requested=25
+2026/04/20 12:23:28 [TrainingRepo] Selected: id=112 prompt="Explain the difference between a clustered and a non-cluster..."
+2026/04/20 12:23:28 [TrainingRepo] Selected: id=130 prompt="What type of JOIN returns all rows from both tables, with NU..."
+2026/04/20 12:23:28 [TrainingRepo] Selected: id=56 prompt="Given: employees(id, dept_id, salary).\nWhat does this query ..."
+2026/04/20 12:23:28 [TrainingRepo] Selected: id=85 prompt="Which normal form eliminates transitive dependencies?"
+2026/04/20 12:23:28 [TrainingRepo] Final summary | unique_questions=4 | repeated_ids_skipped=0 | repeated_prompts_skipped=21 | total_available=37
+2026/04/20 12:23:28 [COUNT] requested=15 ai_first=0 ai_retry=0 ai_total=0 fallback_added=4 final_returned=4
+2026/04/20 12:23:28 [DEDUP] removed_duplicates=0
+2026/04/20 12:23:28 [VARIETY] repeated_prompt_rejections=0
+[GIN] 2026/04/20 - 12:23:28 | 200 |    18.4s |             ::1 | POST     "/api/training/generate"
+[GIN] 2026/04/20 - 12:23:29 | 204 |       0s |             ::1 | OPTIONS  "/api/train/session/78fae4ca-3522-4260-8479-3632f6d264b5"
+2026/04/20 12:23:29 [SESSION_FETCH] id: 78fae4ca-3522-4260-8479-3632f6d264b5
+2026/04/20 12:23:29 [TrainingRepo] Session retrieved | session_id=78fae4ca-3522-4260-8479-3632f6d264b5 topic=dbms questions=4
+2026/04/20 12:23:29 [SESSION_FETCH] found: 78fae4ca-3522-4260-8479-3632f6d264b5
+2026/04/20 12:23:29 [SESSION_FETCH] question count: 4
+[GIN] 2026/04/20 - 12:23:29 | 200 |   1.64ms |             ::1 | GET      "/api/train/session/78fae4ca-3522-4260-8479-3632f6d264b5"
+2026/04/20 12:23:29 [SESSION_FETCH] id: 78fae4ca-3522-4260-8479-3632f6d264b5
+2026/04/20 12:23:29 [TrainingRepo] Session retrieved | session_id=78fae4ca-3522-4260-8479-3632f6d264b5 topic=dbms questions=4
+2026/04/20 12:23:29 [SESSION_FETCH] found: 78fae4ca-3522-4260-8479-3632f6d264b5
+2026/04/20 12:23:29 [SESSION_FETCH] question count: 4
+[GIN] 2026/04/20 - 12:23:29 | 200 |   1.66ms |             ::1 | GET      "/api/train/session/78fae4ca-3522-4260-8479-3632f6d264b5"
+[GIN] 2026/04/20 - 12:24:29 | 200 |   1.68ms |             ::1 | GET      "/api/auth/me"
+2026/04/20 12:25:19 [AI] Start: topic=os difficulty=medium count=15
+2026/04/20 12:25:19 [AI] Calling Gemini v1beta: model=gemini-2.5-flash target_count=15 key=AIza....Vxm0
+2026/04/20 12:25:44 [AI] Raw response received. Length: 9656 bytes
+2026/04/20 12:25:44 [AI] Cleaned JSON length: 9656 bytes
+2026/04/20 12:25:44 [AI] Generation Summary | Requested: 15 | AI Returned: 15 | Validated: 15
+2026/04/20 12:25:44 [COUNT] requested=15 ai_first=15 ai_retry=0 ai_total=15 fallback_added=0 final_returned=15
+2026/04/20 12:25:44 [DEDUP] removed_duplicates=0
+2026/04/20 12:25:44 [VARIETY] repeated_prompt_rejections=0
+[GIN] 2026/04/20 - 12:25:44 | 200 |   25.11s |             ::1 | POST     "/api/training/generate"
+[GIN] 2026/04/20 - 12:25:44 | 204 |  573.6µs |             ::1 | OPTIONS  "/api/train/session/3317aa87-29bb-4269-adc9-7d5ed5de380d"
+[GIN] 2026/04/20 - 12:25:44 | 204 |       0s |             ::1 | OPTIONS  "/api/train/session/3317aa87-29bb-4269-adc9-7d5ed5de380d"
+2026/04/20 12:25:44 [SESSION_FETCH] id: 3317aa87-29bb-4269-adc9-7d5ed5de380d
+2026/04/20 12:25:44 [TrainingRepo] Session retrieved | session_id=3317aa87-29bb-4269-adc9-7d5ed5de380d topic=os questions=15
+2026/04/20 12:25:44 [SESSION_FETCH] found: 3317aa87-29bb-4269-adc9-7d5ed5de380d
+2026/04/20 12:25:44 [SESSION_FETCH] question count: 15
+[GIN] 2026/04/20 - 12:25:44 | 200 |   2.19ms |             ::1 | GET      "/api/train/session/3317aa87-29bb-4269-adc9-7d5ed5de380d"
+2026/04/20 12:25:44 [SESSION_FETCH] id: 3317aa87-29bb-4269-adc9-7d5ed5de380d
+2026/04/20 12:25:44 [TrainingRepo] Session retrieved | session_id=3317aa87-29bb-4269-adc9-7d5ed5de380d topic=os questions=15
+2026/04/20 12:25:44 [SESSION_FETCH] found: 3317aa87-29bb-4269-adc9-7d5ed5de380d
+2026/04/20 12:25:44 [SESSION_FETCH] question count: 15
+[GIN] 2026/04/20 - 12:25:44 | 200 |   2.22ms |             ::1 | GET      "/api/train/session/3317aa87-29bb-4269-adc9-7d5ed5de380d"
+[GIN] 2026/04/20 - 12:26:02 | 200 |   2.71ms |             ::1 | GET      "/api/auth/me"
+2026/04/20 12:27:02 [AI] Start: topic=dbms difficulty=medium count=15
+2026/04/20 12:27:02 [AI] Calling Gemini v1beta: model=gemini-2.5-flash target_count=15 key=AIza....Vxm0
+2026/04/20 12:27:03 [AI] ERROR: Gemini API returned status 503. URL used: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
+2026/04/20 12:27:03 [AI] ERROR: First call failed: gemini API error: status 503
+2026/04/20 12:27:03 [AI] RETRY: Attempting to fill gap of 15 questions
+2026/04/20 12:27:03 [AI] Start: topic=dbms difficulty=medium count=15
+2026/04/20 12:27:03 [AI] Calling Gemini v1beta: model=gemini-2.5-flash target_count=15 key=AIza....Vxm0
+2026/04/20 12:27:28 [AI] Raw response received. Length: 11749 bytes
+2026/04/20 12:27:28 [AI] Cleaned JSON length: 11749 bytes
+2026/04/20 12:27:28 [AI] Generation Summary | Requested: 15 | AI Returned: 15 | Validated: 15
+2026/04/20 12:27:28 [COUNT] requested=15 ai_first=0 ai_retry=15 ai_total=15 fallback_added=0 final_returned=15
+2026/04/20 12:27:28 [DEDUP] removed_duplicates=0
+2026/04/20 12:27:28 [VARIETY] repeated_prompt_rejections=0
+[GIN] 2026/04/20 - 12:27:28 | 200 |   25.84s |             ::1 | POST     "/api/training/generate"
+[GIN] 2026/04/20 - 12:27:29 | 204 |       0s |             ::1 | OPTIONS  "/api/train/session/671d5d28-6ba7-4804-872c-39d4a050976c"
+[GIN] 2026/04/20 - 12:27:29 | 204 |   2.03ms |             ::1 | OPTIONS  "/api/train/session/671d5d28-6ba7-4804-872c-39d4a050976c"
+2026/04/20 12:27:29 [SESSION_FETCH] id: 671d5d28-6ba7-4804-872c-39d4a050976c
+2026/04/20 12:27:29 [TrainingRepo] Session retrieved | session_id=671d5d28-6ba7-4804-872c-39d4a050976c topic=dbms questions=15
+2026/04/20 12:27:29 [SESSION_FETCH] found: 671d5d28-6ba7-4804-872c-39d4a050976c
+2026/04/20 12:27:29 [SESSION_FETCH] question count: 15
+[GIN] 2026/04/20 - 12:27:29 | 200 |   1.67ms |             ::1 | GET      "/api/train/session/671d5d28-6ba7-4804-872c-39d4a050976c"
+2026/04/20 12:27:29 [SESSION_FETCH] id: 671d5d28-6ba7-4804-872c-39d4a050976c
+2026/04/20 12:27:29 [TrainingRepo] Session retrieved | session_id=671d5d28-6ba7-4804-872c-39d4a050976c topic=dbms questions=15
+2026/04/20 12:27:29 [SESSION_FETCH] found: 671d5d28-6ba7-4804-872c-39d4a050976c
+2026/04/20 12:27:29 [SESSION_FETCH] question count: 15
+[GIN] 2026/04/20 - 12:27:29 | 200 |   1.67ms |             ::1 | GET      "/api/train/session/671d5d28-6ba7-4804-872c-39d4a050976c"
+[GIN] 2026/04/20 - 12:30:48 | 200 |   2.19ms |             ::1 | GET      "/api/auth/me"
+2026/04/20 12:31:01 [AI] Start: topic=dbms difficulty=medium count=15
+2026/04/20 12:31:01 [AI] Calling Gemini v1beta: model=gemini-2.5-flash target_count=15 key=AIza....Vxm0
+2026/04/20 12:31:08 [AI] ERROR: Gemini API returned status 503. URL used: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
+2026/04/20 12:31:08 [AI] ERROR: First call failed: gemini API error: status 503
+2026/04/20 12:31:08 [AI] RETRY: Attempting to fill gap of 15 questions
+2026/04/20 12:31:08 [AI] Start: topic=dbms difficulty=medium count=15
+2026/04/20 12:31:08 [AI] Calling Gemini v1beta: model=gemini-2.5-flash target_count=15 key=AIza....Vxm0
+2026/04/20 12:31:10 [AI] ERROR: Gemini API returned status 503. URL used: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
+2026/04/20 12:31:10 [AI] ERROR: Retry call failed: gemini API error: status 503
+2026/04/20 12:31:10 [AI_QUOTA_FAIL] requested=15 min_ai=9 actual_ai=0
+2026/04/20 12:31:10 [FALLBACK] Pulling 15 questions from DB vault
+2026/04/20 12:31:10 [TrainingRepo] Available questions: topic=dbms difficulty=medium total=52 requested=25
+2026/04/20 12:31:10 [TrainingRepo] Selected: id=129 prompt="Given: employees(id, dept_id, salary).\nWhat does this query ..."
+2026/04/20 12:31:10 [TrainingRepo] Selected: id=126 prompt="What type of JOIN returns all rows from both tables, with NU..."
+2026/04/20 12:31:10 [TrainingRepo] Selected: id=113 prompt="Which normal form eliminates transitive dependencies?"
+2026/04/20 12:31:10 [TrainingRepo] Selected: id=159 prompt="What is a key characteristic that distinguishes a clustered ..."
+2026/04/20 12:31:10 [TrainingRepo] Selected: id=155 prompt="What is the primary goal of concurrency control mechanisms i..."
+2026/04/20 12:31:10 [TrainingRepo] Selected: id=14 prompt="Explain the difference between a clustered and a non-cluster..."
+2026/04/20 12:31:10 [TrainingRepo] Selected: id=154 prompt="Which ACID property ensures that a transaction moves the dat..."
+2026/04/20 12:31:10 [TrainingRepo] Selected: id=166 prompt="What is a characteristic of a composite primary key?"
+2026/04/20 12:31:10 [TrainingRepo] Final summary | unique_questions=8 | repeated_ids_skipped=0 | repeated_prompts_skipped=17 | total_available=52
+2026/04/20 12:31:10 [COUNT] requested=15 ai_first=0 ai_retry=0 ai_total=0 fallback_added=8 final_returned=8
+2026/04/20 12:31:10 [DEDUP] removed_duplicates=0
+2026/04/20 12:31:10 [VARIETY] repeated_prompt_rejections=0
+[GIN] 2026/04/20 - 12:31:10 | 200 |     9.4s |             ::1 | POST     "/api/training/generate"
+[GIN] 2026/04/20 - 12:31:11 | 204 |       0s |             ::1 | OPTIONS  "/api/train/session/6a412f2f-c43d-47b4-92c1-cfaa688dee92"
+[GIN] 2026/04/20 - 12:31:11 | 204 |   3.24ms |             ::1 | OPTIONS  "/api/train/session/6a412f2f-c43d-47b4-92c1-cfaa688dee92"
+2026/04/20 12:31:11 [SESSION_FETCH] id: 6a412f2f-c43d-47b4-92c1-cfaa688dee92
+2026/04/20 12:31:11 [TrainingRepo] Session retrieved | session_id=6a412f2f-c43d-47b4-92c1-cfaa688dee92 topic=dbms questions=8
+2026/04/20 12:31:11 [SESSION_FETCH] found: 6a412f2f-c43d-47b4-92c1-cfaa688dee92
+2026/04/20 12:31:11 [SESSION_FETCH] question count: 8
+[GIN] 2026/04/20 - 12:31:11 | 200 |  705.4µs |             ::1 | GET      "/api/train/session/6a412f2f-c43d-47b4-92c1-cfaa688dee92"
+2026/04/20 12:31:11 [SESSION_FETCH] id: 6a412f2f-c43d-47b4-92c1-cfaa688dee92
+2026/04/20 12:31:11 [TrainingRepo] Session retrieved | session_id=6a412f2f-c43d-47b4-92c1-cfaa688dee92 topic=dbms questions=8
+2026/04/20 12:31:11 [SESSION_FETCH] found: 6a412f2f-c43d-47b4-92c1-cfaa688dee92
+2026/04/20 12:31:11 [SESSION_FETCH] question count: 8
+[GIN] 2026/04/20 - 12:31:11 | 200 |   1.97ms |             ::1 | GET      "/api/train/session/6a412f2f-c43d-47b4-92c1-cfaa688dee92"
+
+2026/04/20 12:32:01 [31;1mC:/Users/ipsit/Desktop/final_ojt_project/SkillSprintOJT/go-backend/handlers/attempt.go:60 [35;1mrecord not found
+[0m[33m[1.222ms] [34;1m[rows:0][0m SELECT * FROM `questions` WHERE id = "119" ORDER BY `questions`.`id` LIMIT 1
+2026/04/20 12:32:01 [AttemptSave] Training match: ID=119 correct=false score=0
+
+2026/04/20 12:32:01 [31;1mC:/Users/ipsit/Desktop/final_ojt_project/SkillSprintOJT/go-backend/handlers/attempt.go:60 [35;1mrecord not found
 [0m[33m[0.000ms] [34;1m[rows:0][0m SELECT * FROM `questions` WHERE id = "121" ORDER BY `questions`.`id` LIMIT 1
-2026/04/20 12:13:02 [AttemptSave] Training match: ID=121 correct=true score=10
+2026/04/20 12:32:01 [AttemptSave] Training match: ID=121 correct=true score=10
 
-2026/04/20 12:13:02 [31;1mC:/Users/ipsit/Desktop/final_ojt_project/SkillSprintOJT/go-backend/handlers/attempt.go:60 [35;1mrecord not found
+2026/04/20 12:32:01 [31;1mC:/Users/ipsit/Desktop/final_ojt_project/SkillSprintOJT/go-backend/handlers/attempt.go:60 [35;1mrecord not found
 [0m[33m[0.000ms] [34;1m[rows:0][0m SELECT * FROM `questions` WHERE id = "129" ORDER BY `questions`.`id` LIMIT 1
-2026/04/20 12:13:02 [AttemptSave] Training match: ID=129 correct=false score=0
+2026/04/20 12:32:01 [AttemptSave] Training match: ID=129 correct=false score=0
 
-2026/04/20 12:13:02 [31;1mC:/Users/ipsit/Desktop/final_ojt_project/SkillSprintOJT/go-backend/handlers/attempt.go:60 [35;1mrecord not found
+2026/04/20 12:32:01 [31;1mC:/Users/ipsit/Desktop/final_ojt_project/SkillSprintOJT/go-backend/handlers/attempt.go:60 [35;1mrecord not found
 [0m[33m[0.000ms] [34;1m[rows:0][0m SELECT * FROM `questions` WHERE id = "130" ORDER BY `questions`.`id` LIMIT 1
-2026/04/20 12:13:02 [AttemptSave] Training match: ID=130 correct=false score=0
-[GIN] 2026/04/20 - 12:13:02 | 200 | 118.76ms |             ::1 | POST     "/api/attempts"
-2026/04/20 12:13:22 [AI] Start: topic=dbms difficulty=medium count=10
-2026/04/20 12:13:22 [AI] Calling Gemini v1: target_count=10 key=AIza....Vxm0
-2026/04/20 12:13:22 [AI] ERROR: Gemini API returned status 404. URL used: https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent
-2026/04/20 12:13:22 [AI] ERROR: First call failed: gemini API error: status 404
-2026/04/20 12:13:22 [AI] RETRY: Attempting to fill gap of 10 questions
-2026/04/20 12:13:22 [AI] Start: topic=dbms difficulty=medium count=10
-2026/04/20 12:13:22 [AI] Calling Gemini v1: target_count=10 key=AIza....Vxm0
-2026/04/20 12:13:22 [AI] ERROR: Gemini API returned status 404. URL used: https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent
-2026/04/20 12:13:22 [AI] ERROR: Retry call failed: gemini API error: status 404
-2026/04/20 12:13:22 [AI_QUOTA_FAIL] requested=10 min_ai=6 actual_ai=0
-2026/04/20 12:13:22 [FALLBACK] Pulling 10 questions from DB vault
-2026/04/20 12:13:22 [TrainingRepo] Available questions: topic=dbms difficulty=medium total=37 requested=20
-2026/04/20 12:13:22 [TrainingRepo] Selected: id=55 prompt="Which normal form eliminates transitive dependencies?"
-2026/04/20 12:13:22 [TrainingRepo] Selected: id=125 prompt="What type of JOIN returns all rows from both tables, with NU..."
-2026/04/20 12:13:22 [TrainingRepo] Selected: id=107 prompt="Given: employees(id, dept_id, salary).\nWhat does this query ..."
-2026/04/20 12:13:22 [TrainingRepo] Selected: id=57 prompt="Explain the difference between a clustered and a non-cluster..."
-2026/04/20 12:13:22 [TrainingRepo] Final summary | unique_questions=4 | repeated_ids_skipped=0 | repeated_prompts_skipped=16 | total_available=37
-2026/04/20 12:13:22 [COUNT] requested=10 ai_first=0 ai_retry=0 ai_total=0 fallback_added=4 final_returned=4
-2026/04/20 12:13:22 [DEDUP] removed_duplicates=0
-2026/04/20 12:13:22 [VARIETY] repeated_prompt_rejections=0
-[GIN] 2026/04/20 - 12:13:22 | 200 | 341.19ms |             ::1 | POST     "/api/training/generate"
-[GIN] 2026/04/20 - 12:13:22 | 204 |       0s |             ::1 | OPTIONS  "/api/train/session"
-[GIN] 2026/04/20 - 12:13:22 | 204 |       0s |             ::1 | OPTIONS  "/api/train/session"
-2026/04/20 12:13:22 [TrainSession] INBOUND_AUTH: topic=undefined difficulty=easy count=10
-2026/04/20 12:13:22 [TrainingRepo] Available questions: topic=undefined difficulty=easy total=0 requested=10
-2026/04/20 12:13:22 [DB] ERROR: Fetch failure: no questions found for topic=undefined difficulty=easy
-2026/04/20 12:13:22 [TrainSession] INBOUND_AUTH: topic=undefined difficulty=easy count=10
-2026/04/20 12:13:22 [DB] fetched 0 questions for topic=undefined difficulty=easy
-2026/04/20 12:13:22 [AI] generating 10 questions for topic=undefined
-2026/04/20 12:13:22 [AI] Start: topic=undefined difficulty=easy count=10
-2026/04/20 12:13:22 [AI] Calling Gemini v1: target_count=10 key=AIza....Vxm0
-2026/04/20 12:13:22 [TrainingRepo] Available questions: topic=undefined difficulty=easy total=0 requested=10
-2026/04/20 12:13:22 [DB] ERROR: Fetch failure: no questions found for topic=undefined difficulty=easy
-2026/04/20 12:13:22 [DB] fetched 0 questions for topic=undefined difficulty=easy
-2026/04/20 12:13:22 [AI] generating 10 questions for topic=undefined
-2026/04/20 12:13:22 [AI] Start: topic=undefined difficulty=easy count=10
-2026/04/20 12:13:22 [AI] Calling Gemini v1: target_count=10 key=AIza....Vxm0
-2026/04/20 12:13:23 [AI] ERROR: Gemini API returned status 404. URL used: https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent
-2026/04/20 12:13:23 [AI_FAIL] fallback triggered: error=gemini API error: status 404
-2026/04/20 12:13:23 [TrainSession] Broadening search: topic=undefined -> all difficulties (had 0, need 10)
-2026/04/20 12:13:23 [TrainingRepo] Available questions: topic=undefined difficulty= total=0 requested=10
-2026/04/20 12:13:23 [TrainSession] After broadening: 0 unique questions
-2026/04/20 12:13:23 [TrainSession] Zero questions available for topic=undefined
-[GIN] 2026/04/20 - 12:13:23 | 404 | 238.73ms |             ::1 | POST     "/api/train/session"
-2026/04/20 12:13:23 [AI] ERROR: Gemini API returned status 404. URL used: https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent
-2026/04/20 12:13:23 [AI_FAIL] fallback triggered: error=gemini API error: status 404
-2026/04/20 12:13:23 [TrainSession] Broadening search: topic=undefined -> all difficulties (had 0, need 10)
-2026/04/20 12:13:23 [TrainingRepo] Available questions: topic=undefined difficulty= total=0 requested=10
-2026/04/20 12:13:23 [TrainSession] After broadening: 0 unique questions
-2026/04/20 12:13:23 [TrainSession] Zero questions available for topic=undefined
-[GIN] 2026/04/20 - 12:13:23 | 404 | 290.29ms |             ::1 | POST     "/api/train/session"
-2026/04/20 12:13:35 [TrainSession] INBOUND_AUTH: topic=aptitude difficulty=medium count=10
-2026/04/20 12:13:35 [TrainSession] INBOUND_AUTH: topic=aptitude difficulty=medium count=10
-2026/04/20 12:13:35 [TrainingRepo] Available questions: topic=aptitude difficulty=medium total=13 requested=10
-2026/04/20 12:13:35 [TrainingRepo] Available questions: topic=aptitude difficulty=medium total=13 requested=10
-2026/04/20 12:13:35 [TrainingRepo] Selected: id=92 prompt="A shopkeeper marks an item 25% above cost price and gives a ..."
-2026/04/20 12:13:35 [TrainingRepo] Selected: id=83 prompt="If all Bloops are Razzies and all Razzies are Lazzies, are a..."
-2026/04/20 12:13:35 [TrainingRepo] Selected: id=45 prompt="Find the missing number in the series: 2, 6, 12, 20, 30, ?"
-2026/04/20 12:13:35 [TrainingRepo] Selected: id=81 prompt="A and B can complete a work in 12 and 18 days respectively. ..."
-2026/04/20 12:13:35 [TrainingRepo] Final summary | unique_questions=4 | repeated_ids_skipped=0 | repeated_prompts_skipped=6 | total_available=13
-2026/04/20 12:13:35 [DB] fetched 4 questions for topic=aptitude difficulty=medium
-2026/04/20 12:13:35 [AI] generating 6 questions for topic=aptitude
-2026/04/20 12:13:35 [AI] Start: topic=aptitude difficulty=medium count=6
-2026/04/20 12:13:35 [AI] Calling Gemini v1: target_count=6 key=AIza....Vxm0
-2026/04/20 12:13:35 [TrainingRepo] Selected: id=45 prompt="Find the missing number in the series: 2, 6, 12, 20, 30, ?"
-2026/04/20 12:13:35 [TrainingRepo] Selected: id=44 prompt="If all Bloops are Razzies and all Razzies are Lazzies, are a..."
-2026/04/20 12:13:35 [TrainingRepo] Selected: id=81 prompt="A and B can complete a work in 12 and 18 days respectively. ..."
-2026/04/20 12:13:35 [TrainingRepo] Selected: id=92 prompt="A shopkeeper marks an item 25% above cost price and gives a ..."
-2026/04/20 12:13:35 [TrainingRepo] Final summary | unique_questions=4 | repeated_ids_skipped=0 | repeated_prompts_skipped=6 | total_available=13
-2026/04/20 12:13:35 [DB] fetched 4 questions for topic=aptitude difficulty=medium
-2026/04/20 12:13:35 [AI] generating 6 questions for topic=aptitude
-2026/04/20 12:13:35 [AI] Start: topic=aptitude difficulty=medium count=6
-2026/04/20 12:13:35 [AI] Calling Gemini v1: target_count=6 key=AIza....Vxm0
-2026/04/20 12:13:36 [AI] ERROR: Gemini API returned status 404. URL used: https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent
-2026/04/20 12:13:36 [AI_FAIL] fallback triggered: error=gemini API error: status 404
-2026/04/20 12:13:36 [TrainSession] Broadening search: topic=aptitude -> all difficulties (had 4, need 10)
-2026/04/20 12:13:36 [TrainingRepo] Available questions: topic=aptitude difficulty= total=19 requested=10
-2026/04/20 12:13:36 [TrainingRepo] Selected: id=42 prompt="What is 15% of 240?"
-2026/04/20 12:13:36 [TrainingRepo] Selected: id=41 prompt="If a train travels 360 km in 4 hours, what is its speed in k..."
-2026/04/20 12:13:36 [TrainingRepo] Selected: id=93 prompt="If all Bloops are Razzies and all Razzies are Lazzies, are a..."
-2026/04/20 12:13:36 [TrainingRepo] Selected: id=46 prompt="A shopkeeper marks an item 25% above cost price and gives a ..."
-2026/04/20 12:13:36 [TrainingRepo] Selected: id=47 prompt="In how many ways can 5 people be seated in a row if 2 specif..."
-2026/04/20 12:13:36 [TrainingRepo] Selected: id=49 prompt="A car covers 1/3 of a journey at 40 km/h, and the rest at 60..."
-2026/04/20 12:13:36 [TrainingRepo] Selected: id=81 prompt="A and B can complete a work in 12 and 18 days respectively. ..."
-2026/04/20 12:13:36 [TrainingRepo] Final summary | unique_questions=7 | repeated_ids_skipped=0 | repeated_prompts_skipped=3 | total_available=19
-2026/04/20 12:13:36 [TrainSession] After broadening: 10 unique questions
-2026/04/20 12:13:36 [TrainingRepo] Session created | session_id=782a6a86-591c-4c10-b451-b70680a1527e topic=aptitude status=active
-2026/04/20 12:13:36 [AI] ERROR: Gemini API returned status 404. URL used: https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent
-2026/04/20 12:13:36 [AI_FAIL] fallback triggered: error=gemini API error: status 404
-2026/04/20 12:13:36 [TrainSession] Broadening search: topic=aptitude -> all difficulties (had 4, need 10)
-2026/04/20 12:13:36 [TrainingRepo] Available questions: topic=aptitude difficulty= total=19 requested=10
-2026/04/20 12:13:36 [TrainingRepo] Selected: id=49 prompt="A car covers 1/3 of a journey at 40 km/h, and the rest at 60..."
-2026/04/20 12:13:36 [TrainingRepo] Selected: id=44 prompt="If all Bloops are Razzies and all Razzies are Lazzies, are a..."
-2026/04/20 12:13:36 [TrainingRepo] Selected: id=43 prompt="A and B can complete a work in 12 and 18 days respectively. ..."
-2026/04/20 12:13:36 [TrainingRepo] Selected: id=48 prompt="Two pipes fill a tank in 20 and 30 minutes. A drain empties ..."
-2026/04/20 12:13:36 [TrainingRepo] Selected: id=47 prompt="In how many ways can 5 people be seated in a row if 2 specif..."
-2026/04/20 12:13:36 [TrainingRepo] Selected: id=90 prompt="Find the missing number in the series: 2, 6, 12, 20, 30, ?"
-2026/04/20 12:13:36 [TrainingRepo] Selected: id=80 prompt="A shopkeeper marks an item 25% above cost price and gives a ..."
-2026/04/20 12:13:36 [TrainingRepo] Final summary | unique_questions=7 | repeated_ids_skipped=0 | repeated_prompts_skipped=3 | total_available=19
-2026/04/20 12:13:36 [TrainSession] After broadening: 10 unique questions
-2026/04/20 12:13:36 [TrainingRepo] Session created | session_id=b11a5f22-9fff-4dd4-a843-c04f6e49eaa3 topic=aptitude status=active
-2026/04/20 12:13:36 [TrainSession] SESSION_ESTABLISHED: id=782a6a86-591c-4c10-b451-b70680a1527e count=10 topic=aptitude
-[GIN] 2026/04/20 - 12:13:36 | 200 | 532.19ms |             ::1 | POST     "/api/train/session"
-2026/04/20 12:13:36 [TrainSession] SESSION_ESTABLISHED: id=b11a5f22-9fff-4dd4-a843-c04f6e49eaa3 count=10 topic=aptitude
-[GIN] 2026/04/20 - 12:13:36 | 200 | 533.05ms |             ::1 | POST     "/api/train/session"
+2026/04/20 12:32:01 [AttemptSave] Training match: ID=130 correct=true score=10
 
-2026/04/20 12:14:59 [31;1mC:/Users/ipsit/Desktop/final_ojt_project/SkillSprintOJT/go-backend/handlers/attempt.go:60 [35;1mrecord not found
-[0m[33m[0.000ms] [34;1m[rows:0][0m SELECT * FROM `questions` WHERE id = "45" ORDER BY `questions`.`id` LIMIT 1
-2026/04/20 12:14:59 [AttemptSave] Training match: ID=45 correct=true score=10
+2026/04/20 12:32:01 [31;1mC:/Users/ipsit/Desktop/final_ojt_project/SkillSprintOJT/go-backend/handlers/attempt.go:60 [35;1mrecord not found
+[0m[33m[0.000ms] [34;1m[rows:0][0m SELECT * FROM `questions` WHERE id = "154" ORDER BY `questions`.`id` LIMIT 1
+2026/04/20 12:32:01 [AttemptSave] Training match: ID=154 correct=false score=0
 
-2026/04/20 12:14:59 [31;1mC:/Users/ipsit/Desktop/final_ojt_project/SkillSprintOJT/go-backend/handlers/attempt.go:60 [35;1mrecord not found
-[0m[33m[0.000ms] [34;1m[rows:0][0m SELECT * FROM `questions` WHERE id = "44" ORDER BY `questions`.`id` LIMIT 1
-2026/04/20 12:14:59 [AttemptSave] Training match: ID=44 correct=false score=0
+2026/04/20 12:32:01 [31;1mC:/Users/ipsit/Desktop/final_ojt_project/SkillSprintOJT/go-backend/handlers/attempt.go:60 [35;1mrecord not found
+[0m[33m[0.000ms] [34;1m[rows:0][0m SELECT * FROM `questions` WHERE id = "155" ORDER BY `questions`.`id` LIMIT 1
+2026/04/20 12:32:01 [AttemptSave] Training match: ID=155 correct=false score=0
 
-2026/04/20 12:14:59 [31;1mC:/Users/ipsit/Desktop/final_ojt_project/SkillSprintOJT/go-backend/handlers/attempt.go:60 [35;1mrecord not found
-[0m[33m[0.000ms] [34;1m[rows:0][0m SELECT * FROM `questions` WHERE id = "81" ORDER BY `questions`.`id` LIMIT 1
-2026/04/20 12:14:59 [AttemptSave] Training match: ID=81 correct=false score=0
+2026/04/20 12:32:01 [31;1mC:/Users/ipsit/Desktop/final_ojt_project/SkillSprintOJT/go-backend/handlers/attempt.go:60 [35;1mrecord not found
+[0m[33m[0.000ms] [34;1m[rows:0][0m SELECT * FROM `questions` WHERE id = "159" ORDER BY `questions`.`id` LIMIT 1
+2026/04/20 12:32:01 [AttemptSave] Training match: ID=159 correct=true score=10
 
-2026/04/20 12:14:59 [31;1mC:/Users/ipsit/Desktop/final_ojt_project/SkillSprintOJT/go-backend/handlers/attempt.go:60 [35;1mrecord not found
-[0m[33m[0.000ms] [34;1m[rows:0][0m SELECT * FROM `questions` WHERE id = "92" ORDER BY `questions`.`id` LIMIT 1
-2026/04/20 12:14:59 [AttemptSave] Training match: ID=92 correct=true score=10
-
-2026/04/20 12:14:59 [31;1mC:/Users/ipsit/Desktop/final_ojt_project/SkillSprintOJT/go-backend/handlers/attempt.go:60 [35;1mrecord not found
-[0m[33m[0.000ms] [34;1m[rows:0][0m SELECT * FROM `questions` WHERE id = "49" ORDER BY `questions`.`id` LIMIT 1
-2026/04/20 12:14:59 [AttemptSave] Training match: ID=49 correct=false score=0
-
-2026/04/20 12:14:59 [31;1mC:/Users/ipsit/Desktop/final_ojt_project/SkillSprintOJT/go-backend/handlers/attempt.go:60 [35;1mrecord not found
-[0m[33m[0.000ms] [34;1m[rows:0][0m SELECT * FROM `questions` WHERE id = "43" ORDER BY `questions`.`id` LIMIT 1
-2026/04/20 12:14:59 [AttemptSave] Training match: ID=43 correct=false score=0
-
-2026/04/20 12:14:59 [31;1mC:/Users/ipsit/Desktop/final_ojt_project/SkillSprintOJT/go-backend/handlers/attempt.go:60 [35;1mrecord not found
-[0m[33m[0.000ms] [34;1m[rows:0][0m SELECT * FROM `questions` WHERE id = "48" ORDER BY `questions`.`id` LIMIT 1
-2026/04/20 12:14:59 [AttemptSave] Training match: ID=48 correct=false score=0
-
-2026/04/20 12:14:59 [31;1mC:/Users/ipsit/Desktop/final_ojt_project/SkillSprintOJT/go-backend/handlers/attempt.go:60 [35;1mrecord not found
-[0m[33m[0.000ms] [34;1m[rows:0][0m SELECT * FROM `questions` WHERE id = "47" ORDER BY `questions`.`id` LIMIT 1
-2026/04/20 12:14:59 [AttemptSave] Training match: ID=47 correct=false score=0
-
-2026/04/20 12:14:59 [31;1mC:/Users/ipsit/Desktop/final_ojt_project/SkillSprintOJT/go-backend/handlers/attempt.go:60 [35;1mrecord not found
-[0m[33m[0.000ms] [34;1m[rows:0][0m SELECT * FROM `questions` WHERE id = "90" ORDER BY `questions`.`id` LIMIT 1
-2026/04/20 12:14:59 [AttemptSave] Training match: ID=90 correct=true score=10
-
-2026/04/20 12:14:59 [31;1mC:/Users/ipsit/Desktop/final_ojt_project/SkillSprintOJT/go-backend/handlers/attempt.go:60 [35;1mrecord not found
-[0m[33m[0.000ms] [34;1m[rows:0][0m SELECT * FROM `questions` WHERE id = "80" ORDER BY `questions`.`id` LIMIT 1
-2026/04/20 12:14:59 [AttemptSave] Training match: ID=80 correct=true score=10
-[GIN] 2026/04/20 - 12:14:59 | 200 |   8.39ms |             ::1 | POST     "/api/attempts"
-2026/04/20 12:15:06 [TrainSession] INBOUND_AUTH: topic=aptitude difficulty=medium count=10
-2026/04/20 12:15:06 [TrainingRepo] Available questions: topic=aptitude difficulty=medium total=13 requested=10
-2026/04/20 12:15:06 [TrainingRepo] Selected: id=81 prompt="A and B can complete a work in 12 and 18 days respectively. ..."
-2026/04/20 12:15:06 [TrainingRepo] Selected: id=93 prompt="If all Bloops are Razzies and all Razzies are Lazzies, are a..."
-2026/04/20 12:15:06 [TrainingRepo] Selected: id=80 prompt="A shopkeeper marks an item 25% above cost price and gives a ..."
-2026/04/20 12:15:06 [TrainingRepo] Selected: id=82 prompt="Find the missing number in the series: 2, 6, 12, 20, 30, ?"
-2026/04/20 12:15:06 [TrainingRepo] Final summary | unique_questions=4 | repeated_ids_skipped=0 | repeated_prompts_skipped=6 | total_available=13
-2026/04/20 12:15:06 [DB] fetched 4 questions for topic=aptitude difficulty=medium
-2026/04/20 12:15:06 [AI] generating 6 questions for topic=aptitude
-2026/04/20 12:15:06 [AI] Start: topic=aptitude difficulty=medium count=6
-2026/04/20 12:15:06 [AI] Calling Gemini v1: target_count=6 key=AIza....Vxm0
-2026/04/20 12:15:06 [TrainSession] INBOUND_AUTH: topic=aptitude difficulty=medium count=10
-2026/04/20 12:15:06 [TrainingRepo] Available questions: topic=aptitude difficulty=medium total=13 requested=10
-2026/04/20 12:15:06 [TrainingRepo] Selected: id=44 prompt="If all Bloops are Razzies and all Razzies are Lazzies, are a..."
-2026/04/20 12:15:06 [TrainingRepo] Selected: id=81 prompt="A and B can complete a work in 12 and 18 days respectively. ..."
-2026/04/20 12:15:06 [TrainingRepo] Selected: id=46 prompt="A shopkeeper marks an item 25% above cost price and gives a ..."
-2026/04/20 12:15:06 [TrainingRepo] Selected: id=82 prompt="Find the missing number in the series: 2, 6, 12, 20, 30, ?"
-2026/04/20 12:15:06 [TrainingRepo] Final summary | unique_questions=4 | repeated_ids_skipped=0 | repeated_prompts_skipped=6 | total_available=13
-2026/04/20 12:15:06 [DB] fetched 4 questions for topic=aptitude difficulty=medium
-2026/04/20 12:15:06 [AI] generating 6 questions for topic=aptitude
-2026/04/20 12:15:06 [AI] Start: topic=aptitude difficulty=medium count=6
-2026/04/20 12:15:06 [AI] Calling Gemini v1: target_count=6 key=AIza....Vxm0
-2026/04/20 12:15:06 [AI] ERROR: Gemini API returned status 404. URL used: https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent
-2026/04/20 12:15:06 [AI_FAIL] fallback triggered: error=gemini API error: status 404
-2026/04/20 12:15:06 [TrainSession] Broadening search: topic=aptitude -> all difficulties (had 4, need 10)
-2026/04/20 12:15:06 [TrainingRepo] Available questions: topic=aptitude difficulty= total=19 requested=10
-2026/04/20 12:15:06 [TrainingRepo] Selected: id=50 prompt="What is the probability of getting at least one head in 3 to..."
-2026/04/20 12:15:06 [TrainingRepo] Selected: id=46 prompt="A shopkeeper marks an item 25% above cost price and gives a ..."
-2026/04/20 12:15:06 [TrainingRepo] Selected: id=49 prompt="A car covers 1/3 of a journey at 40 km/h, and the rest at 60..."
-2026/04/20 12:15:06 [TrainingRepo] Selected: id=41 prompt="If a train travels 360 km in 4 hours, what is its speed in k..."
-2026/04/20 12:15:06 [TrainingRepo] Selected: id=93 prompt="If all Bloops are Razzies and all Razzies are Lazzies, are a..."
-2026/04/20 12:15:06 [TrainingRepo] Selected: id=91 prompt="A and B can complete a work in 12 and 18 days respectively. ..."
-2026/04/20 12:15:06 [TrainingRepo] Selected: id=45 prompt="Find the missing number in the series: 2, 6, 12, 20, 30, ?"
-2026/04/20 12:15:06 [TrainingRepo] Final summary | unique_questions=7 | repeated_ids_skipped=0 | repeated_prompts_skipped=3 | total_available=19
-2026/04/20 12:15:06 [TrainSession] After broadening: 10 unique questions
-2026/04/20 12:15:06 [TrainingRepo] Session created | session_id=73ba2a72-1583-4933-b876-00ef75347d2f topic=aptitude status=active
-2026/04/20 12:15:06 [TrainSession] SESSION_ESTABLISHED: id=73ba2a72-1583-4933-b876-00ef75347d2f count=10 topic=aptitude
-[GIN] 2026/04/20 - 12:15:06 | 200 | 192.79ms |             ::1 | POST     "/api/train/session"
-2026/04/20 12:15:06 [AI] ERROR: Gemini API returned status 404. URL used: https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent
-2026/04/20 12:15:06 [AI_FAIL] fallback triggered: error=gemini API error: status 404
-2026/04/20 12:15:06 [TrainSession] Broadening search: topic=aptitude -> all difficulties (had 4, need 10)
-2026/04/20 12:15:06 [TrainingRepo] Available questions: topic=aptitude difficulty= total=19 requested=10
-2026/04/20 12:15:06 [TrainingRepo] Selected: id=42 prompt="What is 15% of 240?"
-2026/04/20 12:15:06 [TrainingRepo] Selected: id=43 prompt="A and B can complete a work in 12 and 18 days respectively. ..."
-2026/04/20 12:15:06 [TrainingRepo] Selected: id=46 prompt="A shopkeeper marks an item 25% above cost price and gives a ..."
-2026/04/20 12:15:06 [TrainingRepo] Selected: id=44 prompt="If all Bloops are Razzies and all Razzies are Lazzies, are a..."
-2026/04/20 12:15:06 [TrainingRepo] Selected: id=48 prompt="Two pipes fill a tank in 20 and 30 minutes. A drain empties ..."
-2026/04/20 12:15:06 [TrainingRepo] Selected: id=90 prompt="Find the missing number in the series: 2, 6, 12, 20, 30, ?"
-2026/04/20 12:15:06 [TrainingRepo] Final summary | unique_questions=6 | repeated_ids_skipped=0 | repeated_prompts_skipped=4 | total_available=19
-2026/04/20 12:15:06 [TrainSession] After broadening: 10 unique questions
-2026/04/20 12:15:06 [TrainingRepo] Session created | session_id=a309d77a-4c96-4678-9b59-96d0cace91c2 topic=aptitude status=active
-2026/04/20 12:15:06 [TrainSession] SESSION_ESTABLISHED: id=a309d77a-4c96-4678-9b59-96d0cace91c2 count=10 topic=aptitude
-[GIN] 2026/04/20 - 12:15:06 | 200 | 356.75ms |             ::1 | POST     "/api/train/session"
-2026/04/20 12:15:33 [AI] Start: topic=system design difficulty=medium count=5
-2026/04/20 12:15:33 [AI] Calling Gemini v1: target_count=5 key=AIza....Vxm0
-2026/04/20 12:15:33 [AI] ERROR: Gemini API returned status 404. URL used: https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent
-2026/04/20 12:15:33 [AI] ERROR: First call failed: gemini API error: status 404
-2026/04/20 12:15:33 [AI] RETRY: Attempting to fill gap of 5 questions
-2026/04/20 12:15:33 [AI] Start: topic=system design difficulty=medium count=5
-2026/04/20 12:15:33 [AI] Calling Gemini v1: target_count=5 key=AIza....Vxm0
-2026/04/20 12:15:33 [AI] ERROR: Gemini API returned status 404. URL used: https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent
-2026/04/20 12:15:33 [AI] ERROR: Retry call failed: gemini API error: status 404
-2026/04/20 12:15:33 [AI_QUOTA_FAIL] requested=5 min_ai=3 actual_ai=0
-2026/04/20 12:15:33 [FALLBACK] Pulling 5 questions from DB vault
-2026/04/20 12:15:33 [TrainingRepo] Available questions: topic=system design difficulty=medium total=0 requested=15
-2026/04/20 12:15:33 [COUNT] requested=5 ai_first=0 ai_retry=0 ai_total=0 fallback_added=0 final_returned=0
-2026/04/20 12:15:33 [DEDUP] removed_duplicates=0
-2026/04/20 12:15:33 [VARIETY] repeated_prompt_rejections=0
-[GIN] 2026/04/20 - 12:15:33 | 404 | 355.83ms |             ::1 | POST     "/api/training/generate"
-2026/04/20 12:15:35 [AI] Start: topic=system design difficulty=medium count=5
-2026/04/20 12:15:35 [AI] Calling Gemini v1: target_count=5 key=AIza....Vxm0
-2026/04/20 12:15:36 [AI] ERROR: Gemini API returned status 404. URL used: https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent
-2026/04/20 12:15:36 [AI] ERROR: First call failed: gemini API error: status 404
-2026/04/20 12:15:36 [AI] RETRY: Attempting to fill gap of 5 questions
-2026/04/20 12:15:36 [AI] Start: topic=system design difficulty=medium count=5
-2026/04/20 12:15:36 [AI] Calling Gemini v1: target_count=5 key=AIza....Vxm0
-2026/04/20 12:15:36 [AI] ERROR: Gemini API returned status 404. URL used: https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent
-2026/04/20 12:15:36 [AI] ERROR: Retry call failed: gemini API error: status 404
-2026/04/20 12:15:36 [AI_QUOTA_FAIL] requested=5 min_ai=3 actual_ai=0
-2026/04/20 12:15:36 [FALLBACK] Pulling 5 questions from DB vault
-2026/04/20 12:15:36 [TrainingRepo] Available questions: topic=system design difficulty=medium total=0 requested=15
-2026/04/20 12:15:36 [COUNT] requested=5 ai_first=0 ai_retry=0 ai_total=0 fallback_added=0 final_returned=0
-2026/04/20 12:15:36 [DEDUP] removed_duplicates=0
-2026/04/20 12:15:36 [VARIETY] repeated_prompt_rejections=0
-[GIN] 2026/04/20 - 12:15:36 | 404 | 517.12ms |             ::1 | POST     "/api/training/generate"
-2026/04/20 12:17:42 [AI] Start: topic=dbms difficulty=medium count=8
-2026/04/20 12:17:42 [AI] Calling Gemini v1: target_count=8 key=AIza....Vxm0
-2026/04/20 12:17:42 [AI] ERROR: Gemini API returned status 404. URL used: https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent
-2026/04/20 12:17:42 [AI] ERROR: First call failed: gemini API error: status 404
-2026/04/20 12:17:42 [AI] RETRY: Attempting to fill gap of 8 questions
-2026/04/20 12:17:42 [AI] Start: topic=dbms difficulty=medium count=8
-2026/04/20 12:17:42 [AI] Calling Gemini v1: target_count=8 key=AIza....Vxm0
-2026/04/20 12:17:42 [AI] ERROR: Gemini API returned status 404. URL used: https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent
-2026/04/20 12:17:42 [AI] ERROR: Retry call failed: gemini API error: status 404
-2026/04/20 12:17:42 [AI_QUOTA_FAIL] requested=8 min_ai=4 actual_ai=0
-2026/04/20 12:17:42 [FALLBACK] Pulling 8 questions from DB vault
-2026/04/20 12:17:42 [TrainingRepo] Available questions: topic=dbms difficulty=medium total=37 requested=18
-2026/04/20 12:17:42 [TrainingRepo] Selected: id=128 prompt="Given: employees(id, dept_id, salary).\nWhat does this query ..."
-2026/04/20 12:17:42 [TrainingRepo] Selected: id=88 prompt="Explain the difference between a clustered and a non-cluster..."
-2026/04/20 12:17:42 [TrainingRepo] Selected: id=123 prompt="What type of JOIN returns all rows from both tables, with NU..."
-2026/04/20 12:17:42 [TrainingRepo] Selected: id=85 prompt="Which normal form eliminates transitive dependencies?"
-2026/04/20 12:17:42 [TrainingRepo] Final summary | unique_questions=4 | repeated_ids_skipped=0 | repeated_prompts_skipped=14 | total_available=37
-2026/04/20 12:17:42 [COUNT] requested=8 ai_first=0 ai_retry=0 ai_total=0 fallback_added=4 final_returned=4
-2026/04/20 12:17:42 [DEDUP] removed_duplicates=0
-2026/04/20 12:17:42 [VARIETY] repeated_prompt_rejections=0
-[GIN] 2026/04/20 - 12:17:42 | 200 |  390.2ms |             ::1 | POST     "/api/training/generate"
-[GIN] 2026/04/20 - 12:17:43 | 204 |       0s |             ::1 | OPTIONS  "/api/train/session/1dcf9df2-de57-452b-9ab7-c73da769eb6b"
-2026/04/20 12:17:43 [SESSION_FETCH] id: 1dcf9df2-de57-452b-9ab7-c73da769eb6b
-2026/04/20 12:17:43 [TrainingRepo] Session retrieved | session_id=1dcf9df2-de57-452b-9ab7-c73da769eb6b topic=dbms questions=4
-2026/04/20 12:17:43 [SESSION_FETCH] found: 1dcf9df2-de57-452b-9ab7-c73da769eb6b
-2026/04/20 12:17:43 [SESSION_FETCH] question count: 4
-[GIN] 2026/04/20 - 12:17:43 | 200 |  510.9µs |             ::1 | GET      "/api/train/session/1dcf9df2-de57-452b-9ab7-c73da769eb6b"
-2026/04/20 12:17:43 [SESSION_FETCH] id: 1dcf9df2-de57-452b-9ab7-c73da769eb6b
-2026/04/20 12:17:43 [TrainingRepo] Session retrieved | session_id=1dcf9df2-de57-452b-9ab7-c73da769eb6b topic=dbms questions=4
-2026/04/20 12:17:43 [SESSION_FETCH] found: 1dcf9df2-de57-452b-9ab7-c73da769eb6b
-2026/04/20 12:17:43 [SESSION_FETCH] question count: 4
-[GIN] 2026/04/20 - 12:17:43 | 200 |   1.08ms |             ::1 | GET      "/api/train/session/1dcf9df2-de57-452b-9ab7-c73da769eb6b"
-[GIN] 2026/04/20 - 12:18:09 | 200 |   1.84ms |             ::1 | GET      "/api/auth/me"
-2026/04/20 12:18:40 [AI] Start: topic=os difficulty=medium count=15
-2026/04/20 12:18:40 [AI] Calling Gemini v1: target_count=15 key=AIza....Vxm0
-2026/04/20 12:18:40 [AI] ERROR: Gemini API returned status 404. URL used: https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent
-2026/04/20 12:18:40 [AI] ERROR: First call failed: gemini API error: status 404
-2026/04/20 12:18:40 [AI] RETRY: Attempting to fill gap of 15 questions
-2026/04/20 12:18:40 [AI] Start: topic=os difficulty=medium count=15
-2026/04/20 12:18:40 [AI] Calling Gemini v1: target_count=15 key=AIza....Vxm0
-2026/04/20 12:18:40 [AI] ERROR: Gemini API returned status 404. URL used: https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent
-2026/04/20 12:18:40 [AI] ERROR: Retry call failed: gemini API error: status 404
-2026/04/20 12:18:40 [AI_QUOTA_FAIL] requested=15 min_ai=9 actual_ai=0
-2026/04/20 12:18:40 [FALLBACK] Pulling 15 questions from DB vault
-2026/04/20 12:18:40 [TrainingRepo] Available questions: topic=os difficulty=medium total=4 requested=25
-2026/04/20 12:18:40 [TrainingRepo] WARNING: Only 4 unique questions available, requested 25
-2026/04/20 12:18:40 [TrainingRepo] Selected: id=23 prompt="Which page replacement algorithm theoretically yields the lo..."
-2026/04/20 12:18:40 [TrainingRepo] Selected: id=24 prompt="What are the four necessary conditions for a deadlock to occ..."
-2026/04/20 12:18:40 [TrainingRepo] Selected: id=25 prompt="What is thrashing in the context of virtual memory?"
-2026/04/20 12:18:40 [TrainingRepo] Selected: id=29 prompt="A system has 5 frames and the reference string: 1 2 3 4 1 2 ..."
-2026/04/20 12:18:40 [TrainingRepo] Final summary | unique_questions=4 | repeated_ids_skipped=0 | repeated_prompts_skipped=0 | total_available=4
-2026/04/20 12:18:40 [COUNT] requested=15 ai_first=0 ai_retry=0 ai_total=0 fallback_added=4 final_returned=4
-2026/04/20 12:18:40 [DEDUP] removed_duplicates=0
-2026/04/20 12:18:40 [VARIETY] repeated_prompt_rejections=0
-[GIN] 2026/04/20 - 12:18:40 | 200 | 374.73ms |             ::1 | POST     "/api/training/generate"
-[GIN] 2026/04/20 - 12:18:40 | 204 |       0s |             ::1 | OPTIONS  "/api/train/session/5444bef5-6f55-4401-b8a6-f2e6bbf7323e"
-2026/04/20 12:18:40 [SESSION_FETCH] id: 5444bef5-6f55-4401-b8a6-f2e6bbf7323e
-2026/04/20 12:18:40 [TrainingRepo] Session retrieved | session_id=5444bef5-6f55-4401-b8a6-f2e6bbf7323e topic=os questions=4
-2026/04/20 12:18:40 [SESSION_FETCH] found: 5444bef5-6f55-4401-b8a6-f2e6bbf7323e
-2026/04/20 12:18:40 [SESSION_FETCH] question count: 4
-[GIN] 2026/04/20 - 12:18:40 | 200 |   1.22ms |             ::1 | GET      "/api/train/session/5444bef5-6f55-4401-b8a6-f2e6bbf7323e"
-2026/04/20 12:18:40 [SESSION_FETCH] id: 5444bef5-6f55-4401-b8a6-f2e6bbf7323e
-2026/04/20 12:18:40 [TrainingRepo] Session retrieved | session_id=5444bef5-6f55-4401-b8a6-f2e6bbf7323e topic=os questions=4
-2026/04/20 12:18:40 [SESSION_FETCH] found: 5444bef5-6f55-4401-b8a6-f2e6bbf7323e
-2026/04/20 12:18:40 [SESSION_FETCH] question count: 4
-[GIN] 2026/04/20 - 12:18:40 | 200 |    1.1ms |             ::1 | GET      "/api/train/session/5444bef5-6f55-4401-b8a6-f2e6bbf7323e"
+2026/04/20 12:32:01 [31;1mC:/Users/ipsit/Desktop/final_ojt_project/SkillSprintOJT/go-backend/handlers/attempt.go:60 [35;1mrecord not found
+[0m[33m[0.000ms] [34;1m[rows:0][0m SELECT * FROM `questions` WHERE id = "166" ORDER BY `questions`.`id` LIMIT 1
+2026/04/20 12:32:01 [AttemptSave] Training match: ID=166 correct=true score=10
+[GIN] 2026/04/20 - 12:32:01 | 200 |   9.83ms |             ::1 | POST     "/api/attempts"
