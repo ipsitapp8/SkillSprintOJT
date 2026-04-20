@@ -28,10 +28,18 @@ export function QuestionRenderer({ question, answer, onChange, isLocked, result 
 
   // 1. MCQ Renderer
   if (type === "mcq") {
+    if (!question.options || question.options.length === 0) {
+      return (
+        <div className="p-6 border border-neon-pink/30 bg-neon-pink/5 font-mono text-[10px] text-neon-pink uppercase tracking-widest animate-pulse">
+           Error: No options discovered for this query.
+        </div>
+      )
+    }
+
     return (
       <div className="space-y-6">
         <div className="grid gap-3 sm:grid-cols-2">
-          {question.options?.map((opt) => {
+          {question.options.map((opt) => {
             const isSelected = answer === opt.id
             const isCorrect = result?.correctOptionId === opt.id
             const isWrong = isSelected && result && !isCorrect
@@ -83,7 +91,7 @@ export function QuestionRenderer({ question, answer, onChange, isLocked, result 
           />
           {result && (
             <div className={`absolute top-4 right-4 font-mono text-[9px] px-2 py-0.5 border ${result.isCorrect ? 'text-neon-green border-neon-green/30 bg-neon-green/5' : 'text-neon-pink border-neon-pink/30 bg-neon-pink/5'} uppercase tracking-widest`}>
-              {result.isCorrect ? 'SYNC_SUCCESS' : 'SYNC_FAILED'}
+              {result.isCorrect ? 'CORRECT' : 'INCORRECT'}
             </div>
           )}
         </div>
@@ -118,7 +126,7 @@ export function QuestionRenderer({ question, answer, onChange, isLocked, result 
         />
         {result && (
             <div className={`absolute top-4 right-4 font-mono text-[9px] px-2 py-0.5 border ${result.isCorrect ? 'text-neon-green border-neon-green/30 bg-neon-green/5' : 'text-neon-pink border-neon-pink/30 bg-neon-pink/5'} uppercase tracking-widest`}>
-              {result.isCorrect ? 'LOGIC_MATCH' : 'LOGIC_ANOMALY'}
+              {result.isCorrect ? 'CORRECT' : 'INCORRECT'}
             </div>
         )}
       </div>

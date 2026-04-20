@@ -6,8 +6,6 @@ import { ProtectedRoute } from "@/components/ProtectedRoute"
 import { TrainingSolver } from "@/components/train/training-solver"
 import { Loader2, ShieldAlert, ArrowLeft, RefreshCcw, Info, ShieldCheck } from "lucide-react"
 
-import { getFallbackQuestions } from "@/lib/mock-questions"
-
 export default function TrainingPlayPage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
   const params = use(paramsPromise)
   const router = useRouter()
@@ -25,60 +23,109 @@ export default function TrainingPlayPage({ params: paramsPromise }: { params: Pr
 
   const fetchQuestions = async () => {
     if (!id) return;
-    setLoading(true)
-    setOfflineStatus(null)
+    setLoading(true);
+    setOfflineStatus(null);
     
     try {
-      if (id === "synthetic_ai") {
-         const localData = sessionStorage.getItem("skillsprint_pending_ai_session");
-         if (localData) {
-            setQuestions(JSON.parse(localData));
-            setOfflineStatus("[ SYNTHETIC AI GENERATION METRICS APPLIED ]");
-            setLoading(false);
-            return;
-         }
-      }
+      const isUUID = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(id);
+      let apiData: any;
 
-      // 1. Try fetching as a direct Quiz ID first
-      const directQRes = await fetch(`http://localhost:8080/api/quizzes/${id}/questions`);
-      if (directQRes.ok) {
-        const qs = await directQRes.json();
-        if (qs && qs.length > 0) {
-          setQuestions(qs);
+      if (isUUID) {
+        // PATH A: Retrieve existing session by UUID
+        const res = await fetch(`http://localhost:8080/api/train/session/${id}`, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include"
+        });
+
+        if (res.status === 404) {
+          setOfflineStatus("Session not found. Please regenerate.");
+          setQuestions([]);
           setLoading(false);
           return;
         }
-      }
 
-      // 2. Try fetching as an Arena ID
-      const arenaRes = await fetch(`http://localhost:8080/api/arenas/${id}/quizzes`);
-      if (arenaRes.ok) {
-        const quizzes = await arenaRes.json();
-        if (quizzes && quizzes.length > 0) {
-          const activeQuiz = quizzes[0];
-          const qRes = await fetch(`http://localhost:8080/api/quizzes/${activeQuiz.id}/questions`);
-          if (qRes.ok) {
-            const qs = await qRes.json();
-            if (qs && qs.length > 0) {
-              setQuestions(qs);
-              setLoading(false);
-              return;
-            }
-          }
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          setOfflineStatus(errData.error || `Failed to fetch session (${res.status})`);
+          setQuestions([]);
+          setLoading(false);
+          return;
         }
+
+        apiData = await res.json();
+      } else {
+        // PATH B: Create new session from topic name
+        const res = await fetch("http://localhost:8080/api/train/session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            topic: id.toLowerCase(),
+            count,
+            difficulty: difficulty.toLowerCase()
+          }),
+          credentials: "include"
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          setOfflineStatus(errData.error || `Failed to create session (${res.status})`);
+          setQuestions([]);
+          setLoading(false);
+          return;
+        }
+
+        apiData = await res.json();
       }
 
-      // 3. empty backend response
-      setQuestions(getFallbackQuestions(id, count));
-      setOfflineStatus("No modules found. Loading default training set.");
+      console.log("Fetched session:", apiData);
+
+      const sessionQuestions = apiData.questions || [];
+      const sessionId = apiData.session_id || apiData.sessionId;
+
+      if (sessionQuestions.length === 0) {
+        setOfflineStatus("No questions available");
+        setQuestions([]);
+        setLoading(false);
+        return;
+      }
+
+      const mapped = sessionQuestions.map((q: any) => {
+        let normalizedOptions = q.options;
+        if (typeof q.options === 'string') {
+          try { normalizedOptions = JSON.parse(q.options); } catch { normalizedOptions = []; }
+        }
+
+        if (q.type === "mcq" && Array.isArray(normalizedOptions)) {
+           normalizedOptions = normalizedOptions.map((optText: string, idx: number) => {
+             if (typeof optText === 'object' && optText !== null) return optText;
+             return { id: `OPT_${q.id}_${idx}`, text: optText };
+           });
+        }
+
+        return {
+          id: String(q.id),
+          prompt: q.prompt || "No prompt provided",
+          type: q.type,
+          options: normalizedOptions,
+          explanation: q.explanation,
+          maxScore: 10,
+          _answer: q.answer,
+          _source: q.source,
+          _sessionId: sessionId
+        };
+      });
+
+      setQuestions(mapped);
       setLoading(false);
+
     } catch (err: any) {
-      // 4. Server unavailable
-      setQuestions(getFallbackQuestions(id, count));
-      setOfflineStatus("Server unavailable. Running offline mode.");
+      console.error("[TrainPlay] Error:", err?.message || err);
+      setOfflineStatus(err?.message || "Failed to load session");
+      setQuestions([]);
       setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
     fetchQuestions()

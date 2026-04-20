@@ -11,7 +11,8 @@ import {
   Loader2, 
   Brain,
   Info,
-  ShieldAlert
+  ShieldAlert,
+  Database
 } from "lucide-react"
 import { saveSessionMetrics } from "@/lib/training-history"
 import { QuestionRenderer } from "./QuestionRenderer"
@@ -24,6 +25,7 @@ interface Question {
   template?: string
   hint?: string
   maxScore: number
+  _source?: string
 }
 
 interface TrainingSolverProps {
@@ -61,40 +63,6 @@ export function TrainingSolver({ initialQuestions, topic, mode, difficulty, coun
   const currentEvaluation = evaluations[currentQuestion?.id]
   const isAnswered = !!answers[currentQuestion?.id]
 
-  // --- Local fallback verification for offline/mock questions ---
-  const verifyLocally = (question: Question, userAnswer: string): { isCorrect: boolean; feedback: string; explanation: string; correctOptionId?: string } => {
-    console.log("[Verify] Using LOCAL fallback verification for:", question.id)
-    const type = question.type?.toLowerCase() || ""
-
-    if (type === "mcq" && question.options) {
-      // For MCQ fallback questions, check if any option text matches a known correct keyword
-      // Since fallback questions don't have a correctOptionId, we use a simple heuristic
-      // Synthetic AI questions can also inject an explicit expectedAnswer
-      const explicitAnswer = (question as any).expectedAnswer
-      const correctOpt = question.options.find(o => 
-        o.id === explicitAnswer ||
-        o.text.toLowerCase() === "stack" || // FALLBACK_01
-        o.id === "OPT_2" // default second option for fallback MCQs
-      )
-      const isCorrect = correctOpt ? userAnswer === correctOpt.id : false
-      return {
-        isCorrect,
-        feedback: isCorrect 
-          ? "System verification: Optimal sync established." 
-          : "System verification: Failed pattern matching.",
-        explanation: question.explanation || "No explanation available in offline mode.",
-        correctOptionId: correctOpt?.id
-      }
-    }
-
-    // For non-MCQ offline questions, we can't truly verify — mark as pending
-    return {
-      isCorrect: false,
-      feedback: "Offline mode: answer recorded. Full verification requires backend connection.",
-      explanation: question.explanation || "Detailed analysis unavailable in offline mode."
-    }
-  }
-
   const handleSubmitAnswer = async () => {
     // 1. Pre-flight: check answer exists
     if (!isAnswered) {
@@ -115,15 +83,73 @@ export function TrainingSolver({ initialQuestions, topic, mode, difficulty, coun
 
     const userAnswer = answers[currentQuestion.id] || ""
     const isMCQ = currentQuestion.type?.toLowerCase() === "mcq"
-    const payload = {
-      questionId: currentQuestion.id,
-      selectedOptionId: isMCQ ? userAnswer : "",
-      writtenAnswer: !isMCQ ? userAnswer : ""
+    
+    // Resolve MCQ ID to actual text for backend consistency
+    let finalAnswerValue = userAnswer
+    if (isMCQ && currentQuestion.options) {
+      const selected = currentQuestion.options.find(o => o.id === userAnswer)
+      if (selected) finalAnswerValue = selected.text
     }
 
-    // 3. Check if this is an offline/fallback/AI question — verify locally
-    if (currentQuestion.id.startsWith("FALLBACK_") || currentQuestion.id.startsWith("AI_SYNTH_")) {
-      const localResult = verifyLocally(currentQuestion, userAnswer)
+    const payload = {
+      questionId: currentQuestion.id,
+      selectedOptionId: isMCQ ? finalAnswerValue : "",
+      writtenAnswer: !isMCQ ? finalAnswerValue : ""
+    }
+
+    console.log("[Verify] Selected:", userAnswer, "->", finalAnswerValue)
+    console.log("[Verify] Payload Sent:", payload)
+
+    // 3. Check if this is a DB-backed training question (from POST /api/train/session)
+    //    These have _answer metadata embedded by the play page mapper
+    const dbAnswer = (currentQuestion as any)._answer
+    if (dbAnswer !== undefined) {
+      // Helper: normalize answer text for reliable comparison
+      const normalize = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ')
+
+      let isCorrect = false
+      let correctOptionId: string | undefined
+
+      if (isMCQ && currentQuestion.options) {
+        // userAnswer is the option ID (e.g. "OPT_13_2")
+        // dbAnswer is the option text (e.g. "3NF")
+        // Find which option the user selected
+        const selectedOpt = currentQuestion.options.find((o: any) => o.id === userAnswer)
+        const selectedText = selectedOpt?.text || ""
+
+        // Find the correct option by normalized text match
+        const correctOpt = currentQuestion.options.find(
+          (o: any) => normalize(o.text) === normalize(dbAnswer)
+        )
+        correctOptionId = correctOpt?.id
+
+        // Compare the selected option text against the correct answer text
+        isCorrect = normalize(selectedText) === normalize(dbAnswer)
+
+        console.log("[Verify] question id:", currentQuestion.id)
+        console.log("[Verify] raw user answer:", selectedText)
+        console.log("[Verify] raw correct answer:", dbAnswer)
+        console.log("[Verify] normalized user:", normalize(selectedText))
+        console.log("[Verify] normalized correct:", normalize(dbAnswer))
+        console.log("[Verify] result:", isCorrect ? "CORRECT" : "INCORRECT")
+      } else {
+        // For non-MCQ, do a basic normalized comparison
+        isCorrect = normalize(userAnswer).includes(normalize(dbAnswer).substring(0, 30))
+
+        console.log("[Verify] question id:", currentQuestion.id)
+        console.log("[Verify] raw user answer:", userAnswer.substring(0, 50))
+        console.log("[Verify] raw correct answer:", dbAnswer.substring(0, 50))
+        console.log("[Verify] result:", isCorrect ? "CORRECT" : "INCORRECT")
+      }
+
+      const localResult = {
+        isCorrect,
+        feedback: isCorrect
+          ? "Correct! Well done."
+          : "Incorrect. Review the explanation below.",
+        explanation: (currentQuestion as any).explanation || "",
+        correctOptionId
+      }
       setEvaluations(prev => ({ ...prev, [currentQuestion.id]: localResult }))
       setIsSubmitting(false)
       return
@@ -167,7 +193,8 @@ export function TrainingSolver({ initialQuestions, topic, mode, difficulty, coun
           correctOptionId: body.correctOptionId || undefined
         }
         setEvaluations(prev => ({ ...prev, [currentQuestion.id]: evaluation }))
-        console.log("[Verify] Success:", evaluation.isCorrect ? "CORRECT" : "INCORRECT")
+        console.log("[Verify] Success. Result:", evaluation.isCorrect ? "CORRECT" : "INCORRECT")
+        console.log("[Verify] Backend Body:", body)
         return
       }
 
@@ -349,10 +376,10 @@ export function TrainingSolver({ initialQuestions, topic, mode, difficulty, coun
             </div>
             <div className="flex flex-col">
               <span className="font-mono text-[10px] tracking-[0.2em] text-neon-cyan uppercase leading-tight">
-                {topic} // NEURAL TRAINING
+                {topic} // PRACTICE SESSION
               </span>
               <span className="font-mono text-[9px] text-muted-foreground uppercase tracking-widest">
-                {mode} — {difficulty}
+                {mode.replace('_', ' ')} — {difficulty}
               </span>
             </div>
           </div>
@@ -392,18 +419,27 @@ export function TrainingSolver({ initialQuestions, topic, mode, difficulty, coun
                 <Zap className="absolute inset-5 h-10 w-10 text-neon-pink animate-pulse" />
              </div>
              <div className="space-y-2">
-                <h2 className="text-2xl font-black italic tracking-widest text-foreground uppercase shadow-neon-glow">SYNCING NEURAL RESULTS</h2>
-                <p className="font-mono text-xs text-muted-foreground uppercase tracking-widest">AI grading engine compiling output...</p>
+                <h2 className="text-2xl font-black italic tracking-widest text-foreground uppercase shadow-neon-glow">EVALUATING ANSWER</h2>
+                <p className="font-mono text-xs text-muted-foreground uppercase tracking-widest">Grading response integrity...</p>
              </div>
           </div>
         ) : (
           <div className="w-full max-w-4xl animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Question Card */}
             <div className="mb-8">
-               <div className="flex items-center gap-2 mb-4">
+               <div className="flex items-center gap-3 mb-4">
                   <span className="font-mono text-[9px] px-2 py-1 bg-neon-cyan/10 text-neon-cyan border border-neon-cyan/20 uppercase tracking-widest">
                     {currentQuestion.type.replace("_", " ")}
                   </span>
+                  {currentQuestion._source === "ai" ? (
+                    <span className="font-mono text-[9px] px-2 py-1 bg-neon-pink/10 text-neon-pink border border-neon-pink/20 uppercase tracking-widest flex items-center gap-1.5">
+                      <Zap className="h-2 w-2 fill-current" /> AI SYNTHESIZED
+                    </span>
+                  ) : (
+                    <span className="font-mono text-[9px] px-2 py-1 bg-white/5 text-muted-foreground border border-white/10 uppercase tracking-widest flex items-center gap-1.5">
+                      <Database className="h-2 w-2" /> VAULT SOURCE
+                    </span>
+                  )}
                   <div className="h-px flex-1 bg-panel-border/30" />
                </div>
                <h2 className="text-2xl font-bold tracking-tight text-foreground leading-tight mb-8">
@@ -437,7 +473,7 @@ export function TrainingSolver({ initialQuestions, topic, mode, difficulty, coun
                   <div className="flex items-center gap-3">
                      <div className={`h-1.5 w-1.5 rounded-full ${isAnswered ? 'bg-neon-cyan animate-pulse' : 'bg-muted-foreground opacity-20'}`} />
                      <span className="font-mono text-[9px] text-muted-foreground uppercase tracking-tighter">
-                       {isAnswered ? 'Neural input detected' : 'Waiting for neural sync...'}
+                       {isAnswered ? 'Answer selected' : 'Waiting for input...'}
                      </span>
                   </div>
                   
@@ -467,7 +503,7 @@ export function TrainingSolver({ initialQuestions, topic, mode, difficulty, coun
                          onClick={handleNext}
                          className="group relative flex items-center gap-3 border border-foreground bg-foreground px-10 py-4 font-mono text-xs font-bold tracking-[0.3em] text-deep-bg transition-all hover:bg-white hover:shadow-[0_0_25px_rgba(255,255,255,0.2)]"
                        >
-                         {currentQ === initialQuestions.length - 1 ? "FINISH EVOLUTION" : "CONTINUE SYNC"}
+                         {currentQ === initialQuestions.length - 1 ? "FINISH SESSION" : "NEXT QUESTION"}
                          <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                        </button>
                      )}

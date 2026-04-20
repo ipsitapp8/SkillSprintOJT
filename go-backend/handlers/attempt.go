@@ -4,8 +4,12 @@ import (
 	"backend/database"
 	"backend/models"
 	"backend/services"
+	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -43,50 +47,96 @@ func SubmitAttempt(c *gin.Context) {
 	attemptAnswers := []models.AttemptAnswer{}
 
 	for _, reqAns := range req.Answers {
-		var question models.Question
-		if err := database.DB.Preload("Options").Where("id = ?", reqAns.QuestionID).First(&question).Error; err != nil {
-			continue // skip invalid questions
-		}
-
 		ans := models.AttemptAnswer{
 			ID:               uuid.New().String(),
 			AttemptID:        attemptID,
-			QuestionID:       question.ID,
+			QuestionID:       reqAns.QuestionID,
 			SelectedOptionID: reqAns.SelectedOptionID,
 			WrittenAnswer:    reqAns.WrittenAnswer,
 		}
 
-		if question.Type == "mcq" {
-			// standard check
-			isCorrect := false
-			for _, opt := range question.Options {
-				if opt.ID == reqAns.SelectedOptionID && opt.IsCorrect {
-					isCorrect = true
-					break
+		// 1. Try Standard Arena Question First
+		var question models.Question
+		if err := database.DB.Preload("Options").Where("id = ?", reqAns.QuestionID).First(&question).Error; err == nil {
+			if question.Type == "mcq" {
+				isCorrect := false
+				for _, opt := range question.Options {
+					if opt.ID == reqAns.SelectedOptionID && opt.IsCorrect {
+						isCorrect = true
+						break
+					}
 				}
-			}
-			ans.IsCorrect = isCorrect
-			if isCorrect {
-				ans.Score = question.MaxScore
-				totalScore += question.MaxScore
-			}
-			ans.Explanation = question.Explanation
-			ans.EvaluatedBy = "system"
-		} else {
-			// Subjective - check with AI evaluator
-			aiEval, err := services.EvaluateAnswer(question.Prompt, question.CorrectAnswer, reqAns.WrittenAnswer, question.MaxScore)
-			if err != nil {
-				// Fallback to minimal mock if AI fails
-				ans.Score = 0
-				ans.Feedback = "AI Evaluation unavailable."
+				ans.IsCorrect = isCorrect
+				if isCorrect {
+					ans.Score = question.MaxScore
+					totalScore += question.MaxScore
+				}
+				ans.Explanation = question.Explanation
+				ans.EvaluatedBy = "system"
 			} else {
-				ans.Score = aiEval.Score
-				ans.IsCorrect = aiEval.IsCorrect
-				ans.Feedback = aiEval.Feedback
-				ans.Explanation = aiEval.Explanation
+				aiEval, err := services.EvaluateAnswer(question.Prompt, question.CorrectAnswer, reqAns.WrittenAnswer, question.MaxScore)
+				if err != nil {
+					ans.Score = 0
+					ans.Feedback = "AI Evaluation unavailable."
+				} else {
+					ans.Score = aiEval.Score
+					ans.IsCorrect = aiEval.IsCorrect
+					ans.Feedback = aiEval.Feedback
+					ans.Explanation = aiEval.Explanation
+				}
+				totalScore += ans.Score
+				ans.EvaluatedBy = "AI"
 			}
-			totalScore += ans.Score
-			ans.EvaluatedBy = "AI"
+			log.Printf("[AttemptSave] Standard match: ID=%s correct=%v score=%d", question.ID, ans.IsCorrect, ans.Score)
+
+		} else {
+			// 2. Try Training Question Fallback
+			var tq models.TrainingQuestion
+			if err := database.DB.Where("id = ?", reqAns.QuestionID).First(&tq).Error; err != nil {
+				log.Printf("[AttemptSave] Warning: Question sinkhole detected: ID=%s", reqAns.QuestionID)
+				continue
+			}
+
+			if tq.Type == "mcq" {
+				var optArr []string
+				json.Unmarshal([]byte(tq.Options), &optArr)
+
+				userText := reqAns.SelectedOptionID
+				if strings.HasPrefix(userText, "OPT_") && len(optArr) > 0 {
+					parts := strings.Split(userText, "_")
+					if len(parts) >= 3 {
+						idxStr := parts[len(parts)-1]
+						if idx, err := strconv.Atoi(idxStr); err == nil && idx >= 0 && idx < len(optArr) {
+							userText = optArr[idx]
+						}
+					}
+				}
+
+				normUser := NormalizeAnswer(userText)
+				normCorrect := NormalizeAnswer(tq.Answer)
+				ans.IsCorrect = (normUser == normCorrect)
+				if ans.IsCorrect {
+					ans.Score = 10
+					totalScore += 10
+				}
+				ans.Explanation = tq.Explanation
+				ans.EvaluatedBy = "system_opt"
+			} else {
+				// Subjective Training Question
+				aiEval, err := services.EvaluateAnswer(tq.Prompt, tq.Answer, reqAns.WrittenAnswer, 10)
+				if err != nil {
+					ans.Score = 0
+					ans.Feedback = "AI Interface Offline."
+				} else {
+					ans.Score = aiEval.Score
+					ans.IsCorrect = aiEval.IsCorrect
+					ans.Feedback = aiEval.Feedback
+					ans.Explanation = aiEval.Explanation
+				}
+				totalScore += ans.Score
+				ans.EvaluatedBy = "AI_TRAIN"
+			}
+			log.Printf("[AttemptSave] Training match: ID=%d correct=%v score=%d", tq.ID, ans.IsCorrect, ans.Score)
 		}
 
 		attemptAnswers = append(attemptAnswers, ans)

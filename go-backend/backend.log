@@ -1,0 +1,30 @@
+2026/04/20 12:04:08 [ENV] Successfully loaded configuration from .env
+2026/04/20 12:04:08 Database connection established (WAL mode enabled)
+[GIN-debug] [WARNING] Creating an Engine instance with the Logger and Recovery middleware already attached.
+
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+[GIN-debug] GET    /api/admin/reload-env     --> main.main.func1 (4 handlers)
+[GIN-debug] POST   /api/auth/login           --> backend/handlers.LoginHandler (4 handlers)
+[GIN-debug] POST   /api/auth/signup          --> backend/handlers.SignupHandler (4 handlers)
+[GIN-debug] POST   /api/auth/logout          --> backend/handlers.LogoutHandler (4 handlers)
+[GIN-debug] GET    /api/auth/me              --> backend/handlers.MeHandler (5 handlers)
+[GIN-debug] GET    /api/arenas               --> backend/handlers.GetArenas (4 handlers)
+[GIN-debug] GET    /api/arenas/:id           --> backend/handlers.GetArenaDetail (4 handlers)
+[GIN-debug] GET    /api/arenas/:id/quizzes   --> backend/handlers.GetArenaQuizzes (4 handlers)
+[GIN-debug] GET    /api/quizzes/:quizId/questions --> backend/handlers.GetQuizQuestions (4 handlers)
+[GIN-debug] GET    /api/attempts/leaderboard --> backend/handlers.GetLeaderboard (4 handlers)
+[GIN-debug] POST   /api/train/session        --> backend/handlers.CreateTrainSession (4 handlers)
+[GIN-debug] GET    /api/train/session/:id    --> backend/handlers.GetTrainSessionDetail (4 handlers)
+[GIN-debug] POST   /api/attempts             --> backend/handlers.SubmitAttempt (5 handlers)
+[GIN-debug] GET    /api/attempts/:id         --> backend/handlers.GetAttemptResult (5 handlers)
+[GIN-debug] POST   /api/evaluate-answer      --> backend/handlers.EvaluateAnswer (5 handlers)
+[GIN-debug] POST   /api/training/verify      --> backend/handlers.VerifyAnswer (5 handlers)
+[GIN-debug] POST   /api/training/generate    --> backend/handlers.GenerateTrainingSession (5 handlers)
+[GIN-debug] GET    /api/training/session/:id --> backend/handlers.GetTrainingSession (5 handlers)
+2026/04/20 12:04:08 Starting Gin server on :8080
+[GIN-debug] [WARNING] You trusted all proxies, this is NOT safe. We recommend you to set a value.
+Please check https://github.com/gin-gonic/gin/blob/master/docs/doc.md#dont-trust-all-proxies for details.
+[GIN-debug] Listening and serving HTTP on :8080
