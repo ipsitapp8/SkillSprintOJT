@@ -137,31 +137,44 @@ export default function TrainPage() {
     setAiError(null);
     setAiLoading(true);
 
+    const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080";
+    const url = `${API_BASE}/api/training/generate`;
+
     const payload = { 
       topic: aiTopic.toLowerCase(),
       difficulty: aiDifficulty.toLowerCase(), 
       count: aiCount 
     };
 
+    console.log("[AI_GEN] URL:", url);
+    console.log("[AI_GEN] Payload:", payload);
+
     try {
-      const res = await fetch("http://localhost:8080/api/training/generate", {
+      const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
         credentials: "include"
       });
 
+      console.log("[AI_GEN] Status:", res.status);
+
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
         const errorMsg = errData.error || `Generation failed (${res.status})`;
         console.error("[AI_GEN] API error:", errorMsg);
-        setAiError(errorMsg);
+        
+        if (res.status === 401) {
+          setAiError("UNAUTHORIZED: PLEASE SIGN IN TO GENERATE AI SESSIONS");
+        } else {
+          setAiError(errorMsg);
+        }
         setAiLoading(false);
         return;
       }
 
       const data = await res.json();
-      console.log("SESSION:", data);
+      console.log("[AI_GEN] Data Received:", data);
 
       if (!data.sessionId && !data.session_id) {
         console.error("[AI_GEN] No session ID in response");
@@ -181,8 +194,13 @@ export default function TrainPage() {
       console.log("[AI_GEN] Redirecting to play:", sessionId);
       router.push(`/train/play/${sessionId}?topic=${encodeURIComponent(aiTopic)}&mode=AI_SYNTH_MODE&difficulty=${encodeURIComponent(aiDifficulty)}&count=${aiCount}`);
     } catch (err: any) {
-      console.error("[AI_GEN] Error:", err?.message);
-      setAiError(err?.message || "AI services offline.");
+      console.error("[AI_GEN] Fetch Exception:", err?.message);
+      // DISTINGUISH: Network Error vs App Error
+      if (err?.message?.includes("fetch") || err?.message?.includes("NetworkError")) {
+        setAiError("CONNECTIVITY FAILURE: BACKEND UNREACHABLE. CHECK SERVER STATUS.");
+      } else {
+        setAiError(err?.message || "AI SERVICES OFFLINE.");
+      }
     } finally {
       setAiLoading(false);
     }
