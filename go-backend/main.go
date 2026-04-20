@@ -24,9 +24,11 @@ func main() {
 
 	r := gin.Default()
 
-	// Setup CORS to allow Next.js proxying requests
+	// Setup Robust CORS to allow Next.js communication
 	config := cors.DefaultConfig()
 	config.AllowOrigins = []string{"http://localhost:3000"}
+	config.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"}
+	config.AllowHeaders = []string{"Origin", "Content-Type", "Content-Length", "Accept", "Accept-Encoding", "X-CSRF-Token", "Authorization"}
 	config.AllowCredentials = true
 	r.Use(cors.New(config))
 
