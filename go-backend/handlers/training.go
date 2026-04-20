@@ -167,6 +167,8 @@ func GenerateTrainingSession(c *gin.Context) {
 		return
 	}
 
+	log.Printf("[AI_GEN_ROUTE] Hit topic=%q difficulty=%q count=%d", req.Topic, req.Difficulty, req.Count)
+
 	requestedCount := req.Count
 	if requestedCount <= 0 {
 		requestedCount = 10 // Default
