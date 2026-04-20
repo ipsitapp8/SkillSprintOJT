@@ -13,7 +13,145 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/dslipak/pdf"
+	"io"
+	"bytes"
 )
+
+// UploadNotes handles the multipart file ingestion, extraction, and AI orchestration.
+func UploadNotes(c *gin.Context) {
+	file, header, err := c.Request.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "File transfer failed"})
+		return
+	}
+	defer file.Close()
+
+	topic := c.PostForm("topic")
+	difficulty := c.PostForm("difficulty")
+	countStr := c.PostForm("count")
+	count, _ := strconv.Atoi(countStr)
+	if count <= 0 {
+		count = 5
+	}
+
+	ext := strings.ToLower(header.Filename[strings.LastIndex(header.Filename, "."):])
+	var extractedText string
+
+	log.Printf("[NOTES_INGEST] Processing file=%s ext=%s", header.Filename, ext)
+
+	if ext == ".txt" {
+		data, err := io.ReadAll(file)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read TXT file"})
+			return
+		}
+		extractedText = string(data)
+	} else if ext == ".pdf" {
+		content, err := pdf.NewReader(file, header.Size)
+		if err != nil {
+			log.Printf("[NOTES_INGEST] PDF Error: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to initialize PDF reader"})
+			return
+		}
+
+		var buf bytes.Buffer
+		nPages := content.NumPage()
+		for i := 1; i <= nPages; i++ {
+			p := content.Page(i)
+			if p.V.IsNull() {
+				continue
+			}
+			s, _ := p.GetPlainText(nil)
+			buf.WriteString(s)
+		}
+		extractedText = buf.String()
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Unsupported file format. Use .txt or .pdf"})
+		return
+	}
+
+	extractedText = strings.TrimSpace(extractedText)
+	textLen := len(extractedText)
+	log.Printf("[NOTES_INGEST] Extraction complete. Length: %d chars", textLen)
+
+	if textLen < 50 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Extracted text is too short for meaningful analysis."})
+		return
+	}
+
+	// Create Upload record
+	upload := models.Upload{
+		Filename:      header.Filename,
+		Topic:         topic,
+		Status:        "processing",
+		ExtractedText: extractedText,
+	}
+	database.DB.Create(&upload)
+
+	// 1. Summarize
+	summary, err := services.SummarizeNotes(extractedText)
+	if err != nil {
+		log.Printf("[NOTES_INGEST] Summarization failed: %v", err)
+		database.DB.Model(&upload).Update("status", "failed")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "AI failed to summarize notes"})
+		return
+	}
+	database.DB.Model(&upload).Update("summary", summary)
+
+	// 2. Generate questions
+	aiQuestions, err := services.GenerateQuestionsFromNotes(summary, count, difficulty)
+	if err != nil {
+		log.Printf("[NOTES_INGEST] Generation failed: %v", err)
+		database.DB.Model(&upload).Update("status", "failed")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "AI failed to generate questions from notes"})
+		return
+	}
+
+	// 3. Persist questions & Create Session
+	var questionIDs []uint
+	for _, q := range aiQuestions {
+		optJSON, _ := json.Marshal(q.Options)
+		tq := models.TrainingQuestion{
+			Topic:       topic,
+			Type:        q.Type,
+			Difficulty:  q.Difficulty,
+			Prompt:      q.Prompt,
+			Options:     string(optJSON),
+			Answer:      q.Answer,
+			Explanation: q.Explanation,
+			Source:      "notes",
+		}
+		if err := database.DB.Create(&tq).Error; err == nil {
+			questionIDs = append(questionIDs, tq.ID)
+		}
+	}
+
+	sessionID := uuid.New().String()
+	qIDsJSON, _ := json.Marshal(questionIDs)
+	session := models.TrainingSession{
+		SessionID:   sessionID,
+		Topic:       topic,
+		QuestionIDs: string(qIDsJSON),
+		Status:      "active",
+		CreatedAt:   time.Now(),
+	}
+	database.DB.Create(&session)
+
+	// Finalize upload record
+	database.DB.Model(&upload).Updates(map[string]interface{}{
+		"status":              "done",
+		"questions_generated": len(questionIDs),
+	})
+
+	c.JSON(http.StatusOK, gin.H{
+		"session_id": sessionID,
+		"status":     "success",
+		"summary":    summary,
+		"count":      len(questionIDs),
+	})
+}
+
 
 
 type VerifyRequest struct {

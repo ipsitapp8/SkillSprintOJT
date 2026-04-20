@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -269,22 +270,147 @@ Rules:
 	return questions, nil
 }
 
+// SummarizeNotes generates a concise technical summary of the provided text.
+func SummarizeNotes(text string) (string, error) {
+	apiKey := os.Getenv("GEMINI_API_KEY")
+	if apiKey == "" {
+		return "", fmt.Errorf("GEMINI_API_KEY not found")
+	}
+
+	prompt := fmt.Sprintf(`Summarize the following technical notes. Focus on key concepts, definitions, and architectural details. 
+Keep it concise but detailed enough to generate technical quiz questions later.
+Notes Content:
+%s`, text)
+
+	type Part struct{ Text string `json:"text"` }
+	type Content struct{ Parts []Part `json:"parts"` }
+	type RequestBody struct{ Contents []Content `json:"contents"` }
+
+	reqBody := RequestBody{Contents: []Content{{Parts: []Part{{Text: prompt}}}}}
+	jsonData, _ := json.Marshal(reqBody)
+
+	url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=%s", apiKey)
+	client := &http.Client{Timeout: 30 * time.Second}
+	resp, err := client.Post(url, "application/json", bytes.NewBuffer(jsonData))
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+
+	if resp.StatusCode != http.StatusOK {
+		log.Printf("[AI] Gemini Summary Error: %d | Body: %s", resp.StatusCode, string(body))
+		return "", fmt.Errorf("gemini API error: %d", resp.StatusCode)
+	}
+
+	log.Printf("[AI] Gemini Summary Raw Body: %.200s", string(body))
+
+	var result struct {
+		Candidates []struct {
+			Content struct {
+				Parts []struct {
+					Text string `json:"text"`
+				} `json:"parts"`
+			} `json:"content"`
+		} `json:"candidates"`
+	}
+
+	if err := json.Unmarshal(body, &result); err != nil {
+		return "", err
+	}
+
+
+	if len(result.Candidates) == 0 || len(result.Candidates[0].Content.Parts) == 0 {
+		return "", fmt.Errorf("empty response from gemini")
+	}
+
+	return result.Candidates[0].Content.Parts[0].Text, nil
+}
+
+// GenerateQuestionsFromNotes derives MCQ questions from a technical summary.
+func GenerateQuestionsFromNotes(summary string, count int, difficulty string) ([]GeneratedQuestion, error) {
+	apiKey := os.Getenv("GEMINI_API_KEY")
+	if apiKey == "" {
+		return nil, fmt.Errorf("GEMINI_API_KEY not found")
+	}
+
+	prompt := fmt.Sprintf(`Based on the technical summary below, generate EXACTLY %d MCQ questions. 
+Difficulty: %s
+
+Summary Context:
+%s
+
+Return ONLY a JSON array of objects:
+[
+  {
+    "type": "mcq",
+    "prompt": "Question text...",
+    "options": ["A", "B", "C", "D"],
+    "answer": "Correct option text",
+    "explanation": "Reasoning...",
+    "difficulty": "%s"
+  }
+]
+Do not use markdown code fences.`, count, difficulty, summary, difficulty)
+
+	type Part struct{ Text string `json:"text"` }
+	type Content struct{ Parts []Part `json:"parts"` }
+	type RequestBody struct{ Contents []Content `json:"contents"` }
+
+	reqBody := RequestBody{Contents: []Content{{Parts: []Part{{Text: prompt}}}}}
+	jsonData, _ := json.Marshal(reqBody)
+
+	url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=%s", apiKey)
+	client := &http.Client{Timeout: 30 * time.Second}
+	resp, err := client.Post(url, "application/json", bytes.NewBuffer(jsonData))
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var result struct {
+		Candidates []struct {
+			Content struct {
+				Parts []struct {
+					Text string `json:"text"`
+				} `json:"parts"`
+			} `json:"content"`
+		} `json:"candidates"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, err
+	}
+
+	if len(result.Candidates) == 0 || len(result.Candidates[0].Content.Parts) == 0 {
+		return nil, fmt.Errorf("empty response from gemini")
+	}
+
+	rawText := result.Candidates[0].Content.Parts[0].Text
+	cleaned := cleanGeminiResponse(rawText)
+
+	var questions []GeneratedQuestion
+	if err := json.Unmarshal([]byte(cleaned), &questions); err != nil {
+		return nil, fmt.Errorf("failed to parse AI questions: %w", err)
+	}
+
+	return questions, nil
+}
+
 // cleanGeminiResponse strips markdown fences and extracts the JSON array.
 func cleanGeminiResponse(raw string) string {
 	raw = strings.TrimSpace(raw)
-
-	// Remove markdown code fences
 	raw = strings.TrimPrefix(raw, "```json")
 	raw = strings.TrimPrefix(raw, "```")
 	raw = strings.TrimSuffix(raw, "```")
 	raw = strings.TrimSpace(raw)
 
-	// Extract the outermost JSON array brackets
 	first := strings.Index(raw, "[")
 	last := strings.LastIndex(raw, "]")
 	if first != -1 && last != -1 && last > first {
 		return raw[first : last+1]
 	}
-
 	return raw
 }
+

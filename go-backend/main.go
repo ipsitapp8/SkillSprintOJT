@@ -73,6 +73,7 @@ func main() {
 		protected.POST("/evaluate-answer", handlers.EvaluateAnswer)
 		protected.POST("/training/verify", handlers.VerifyAnswer)
 		protected.POST("/training/generate", handlers.GenerateTrainingSession)
+		protected.POST("/train/upload-notes", handlers.UploadNotes)
 		protected.GET("/training/session/:id", handlers.GetTrainingSession)
 	}
 

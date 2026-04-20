@@ -37,6 +37,8 @@ type Upload struct {
 	Filename           string    `gorm:"column:filename" json:"filename"`
 	Topic              string    `gorm:"column:topic" json:"topic"`
 	Status             string    `gorm:"column:status" json:"status"` // pending | processing | done | failed
+	ExtractedText      string    `gorm:"column:extracted_text;type:text" json:"extracted_text"`
+	Summary            string    `gorm:"column:summary;type:text" json:"summary"`
 	QuestionsGenerated int       `gorm:"column:questions_generated" json:"questions_generated"`
 	CreatedAt          time.Time `gorm:"column:created_at;autoCreateTime" json:"created_at"`
 }
