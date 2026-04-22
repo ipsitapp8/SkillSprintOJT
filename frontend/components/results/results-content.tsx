@@ -126,15 +126,15 @@ export function ResultsContent({ id }: { id?: string }) {
 
     let smartFeedback = ""
     if (speedScore > 80 && accuracy > 80) {
-       smartFeedback = `[ SYSTEM NOTE ]: Exceptional metrics. Sync optimization 100%. \n[ TACTICAL ]: ${diffRec.reason || 'Increasing system pressure is recommended.'}`
+       smartFeedback = `[ SYSTEM NOTE ]: Exceptional metrics. Sync optimization 100%. \n[ TACTICAL ]: Increasing system pressure is recommended.`
        revisionConcept = "Advanced Architectures"
        strongAreas.push("Syntactic Velocity", "Pattern Recognition")
     } else if (accuracy > 70) {
-       smartFeedback = `[ SYSTEM NOTE ]: Acceptable pass rate identified. Routine stable. \n[ TACTICAL ]: ${diffRec.reason || 'Sustain current parameters.'}`
+       smartFeedback = `[ SYSTEM NOTE ]: Acceptable pass rate identified. Routine stable. \n[ TACTICAL ]: Sustain current parameters.`
        revisionConcept = "State Management"
        strongAreas.push("Core Logic")
     } else if (speedScore > 80 && accuracy < 50) {
-       smartFeedback = `[ WARNING ]: Reckless inputs detected. Velocity does not excuse syntax degradation. \n[ TACTICAL ]: ${diffRec.reason || 'Downgrading difficulty to foundational nodes.'}`
+       smartFeedback = `[ WARNING ]: Reckless inputs detected. Velocity does not excuse syntax degradation. \n[ TACTICAL ]: Downgrading difficulty to foundational nodes.`
        revisionConcept = "Core Principles"
        weakAreas.push("Accuracy Threshold", "Logic Verification")
     } else {
