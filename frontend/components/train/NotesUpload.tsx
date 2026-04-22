@@ -21,6 +21,7 @@ export function NotesUpload() {
   }
 
   const handleUpload = async () => {
+    if (loading) return // Prevent double-clicks
     if (!selectedFile) {
       setError("SELECT A DATA FILE FIRST")
       return
@@ -35,25 +36,53 @@ export function NotesUpload() {
     formData.append("difficulty", difficulty)
     formData.append("count", count.toString())
 
+    const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080"
+    const UPLOAD_URL = `${API_BASE}/api/train/upload-notes`
+
+    console.log("[NOTES_UPLOAD] Init Sync Request:")
+    console.log(" - API_BASE:", API_BASE)
+    console.log(" - URL:", UPLOAD_URL)
+    console.log(" - File:", selectedFile.name, `(${selectedFile.size} bytes)`)
+    console.log(" - Metadata:", { topic, difficulty, count })
+
     try {
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080"
-      const res = await fetch(`${API_BASE}/api/train/upload-notes`, {
+      const res = await fetch(UPLOAD_URL, {
         method: "POST",
         body: formData,
         credentials: "include"
       })
 
+      const raw = await res.text()
+      let parsed: any = null
+      try {
+        parsed = raw ? JSON.parse(raw) : null
+      } catch (parseErr) {
+        console.error("[NOTES_UPLOAD] Response JSON parse failed:", parseErr)
+        console.error("[NOTES_UPLOAD] Raw response text (non-JSON):", raw)
+      }
+      console.log("[NOTES_UPLOAD] Response status:", res.status)
+      console.log("[NOTES_UPLOAD] Raw response text:", raw)
+
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Cognitive sync failed")
+        console.error("[NOTES_UPLOAD] Backend Error:", parsed ?? raw)
+        const backendMessage =
+          parsed?.error ||
+          (raw && raw.trim().length > 0 ? raw : "Backend returned an empty error response")
+        throw new Error(backendMessage || `HTTP_ERROR: ${res.status}`)
       }
 
-      const data = await res.json()
-      console.log("[NOTES_GEN] Success:", data)
+      const data = parsed ?? {}
+      console.log("[NOTES_UPLOAD] Success Response:", data)
       router.push(`/train/play/${data.session_id}?topic=${encodeURIComponent(topic)}&mode=AI_SYNTH_MODE&difficulty=${encodeURIComponent(difficulty)}&count=${data.count}`)
     } catch (err: any) {
-      console.error("[NOTES_GEN] Error:", err)
-      setError(err.message || "SYNC_FAILURE: AI SERVERS UNREACHABLE")
+      console.error("[NOTES_UPLOAD] Fatal Error:", err)
+      
+      // Distinguish between network errors (TypeError) and response errors
+      if (err instanceof TypeError && err.message === "Failed to fetch") {
+        setError("Backend unreachable. Check upload-notes route and server.")
+      } else {
+        setError(err.message || "SYNC_FAILURE: UNKNOWN_ERROR")
+      }
     } finally {
       setLoading(false)
     }
@@ -141,8 +170,9 @@ export function NotesUpload() {
 
             {!loading && selectedFile && (
               <button 
+                disabled={loading}
                 onClick={(e) => { e.stopPropagation(); handleUpload(); }}
-                className="mt-6 px-6 py-2 border border-neon-pink text-neon-pink font-mono text-[10px] tracking-widest hover:bg-neon-pink hover:text-white transition-all animate-pulse-glow"
+                className="mt-6 px-6 py-2 border border-neon-pink text-neon-pink font-mono text-[10px] tracking-widest hover:bg-neon-pink hover:text-white transition-all animate-pulse-glow disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 INITIALIZE SYNC
               </button>

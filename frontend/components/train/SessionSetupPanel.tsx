@@ -18,6 +18,7 @@ export function SessionSetupPanel({ topic, mode, onClose, onStart }: SessionSetu
   const [error, setError] = useState<string | null>(null)
 
   const handleStart = async () => {
+    if (isGenerating) return // Prevent double-clicks
     setIsGenerating(true)
     setError(null)
 
@@ -44,9 +45,9 @@ export function SessionSetupPanel({ topic, mode, onClose, onStart }: SessionSetu
         setError(errData.error || "Neural synthesis interrupted")
         setIsGenerating(false)
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err)
-      setError("AI Interface Offline")
+      setError(err?.message || "Server unreachable. Please try again.")
       setIsGenerating(false)
     }
   }
