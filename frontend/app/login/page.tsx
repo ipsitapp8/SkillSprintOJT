@@ -15,6 +15,7 @@ import {
   Zap,
 } from "lucide-react"
 import Link from "next/link"
+import Script from "next/script"
 import { useAuth } from "@/hooks/useAuth"
 import { API_BASE } from "@/lib/api-config"
 
@@ -61,6 +62,59 @@ function LoginContent() {
       router.push("/")
     }
   }, [authLoading, isAuthenticated, router])
+
+  // Google Login Callback
+  const handleGoogleLogin = async (response: any) => {
+    setLoading(true)
+    setError("")
+    try {
+      const res = await fetch(`${API_BASE}/api/auth/google`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ credential: response.credential }),
+        credentials: "include",
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        setError(data.error || "Google authentication failed")
+        setLoading(false)
+        return
+      }
+
+      await checkAuth()
+      router.push("/")
+    } catch (err) {
+      console.error(err)
+      setError("Google authentication service unreachable.")
+      setLoading(false)
+    }
+  }
+
+  // Initialize Google Login button
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if ((window as any).google) {
+        clearInterval(interval);
+        (window as any).google.accounts.id.initialize({
+          client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "1028741364585-6r0itg883g35qj8n3i8b8d9600egh20e.apps.googleusercontent.com",
+          callback: handleGoogleLogin,
+        });
+        const container = document.getElementById("google-button-container");
+        if (container) {
+          (window as any).google.accounts.id.renderButton(container, {
+            theme: "outline",
+            size: "large",
+            width: 320,
+            text: "continue_with",
+            shape: "square",
+          });
+        }
+      }
+    }, 100);
+    return () => clearInterval(interval);
+  }, []);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -352,6 +406,23 @@ function LoginContent() {
                   )}
                 </button>
 
+                {/* Google Login Divider */}
+                <div className="flex items-center gap-3">
+                  <div className="h-px flex-1 bg-panel-border/50" />
+                  <span className="font-mono text-[9px] tracking-widest text-muted-foreground uppercase">
+                    OR
+                  </span>
+                  <div className="h-px flex-1 bg-panel-border/50" />
+                </div>
+
+                {/* Google Button Container */}
+                <div className="flex flex-col gap-3">
+                  <div id="google-button-container" className="flex justify-center" />
+                  <p className="font-mono text-[9px] text-center text-muted-foreground uppercase tracking-widest">
+                    RECOMMENDED FOR ADMINS (@POLARIS.COM)
+                  </p>
+                </div>
+
                 {/* Toggle mode */}
                 <div className="text-center">
                   {mode === "login" ? (
@@ -451,6 +522,7 @@ function LoginContent() {
           </div>
         </div>
       </div>
+      <Script src="https://accounts.google.com/gsi/client" strategy="afterInteractive" />
     </div>
   )
 }
