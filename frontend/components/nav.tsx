@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Menu, X, Zap, LogOut, User, ChevronDown } from "lucide-react"
+import { Menu, X, Zap, LogOut, User, ChevronDown, Shield } from "lucide-react"
 import { useAuth } from "@/hooks/useAuth"
 
 const navLinks = [
@@ -66,6 +66,20 @@ export function Nav() {
               </Link>
             )
           })}
+          {/* Admin link - only for admin users */}
+          {user?.role === "admin" && (
+            <Link
+              href="/admin"
+              className={`px-4 py-2 font-mono text-[10px] tracking-[0.15em] transition-colors border border-transparent hover:border-neon-pink/10 hover:bg-neon-pink/5 ${
+                pathname?.startsWith("/admin") ? "text-neon-pink bg-neon-pink/5 border-neon-pink/20" : "text-muted-foreground hover:text-neon-pink"
+              }`}
+            >
+              <span className="flex items-center gap-1.5">
+                <Shield className="h-3 w-3" />
+                ADMIN
+              </span>
+            </Link>
+          )}
         </div>
 
         <div className="hidden items-center gap-3 md:flex">
@@ -92,6 +106,16 @@ export function Nav() {
                     <User className="h-3 w-3" />
                     PROFILE
                   </Link>
+                  {user?.role === "admin" && (
+                    <Link
+                      href="/admin"
+                      onClick={() => setDropdownOpen(false)}
+                      className="flex w-full items-center gap-2 px-4 py-2 font-mono text-[10px] tracking-widest text-muted-foreground transition-colors hover:text-neon-pink hover:bg-neon-pink/5"
+                    >
+                      <Shield className="h-3 w-3" />
+                      ADMIN PANEL
+                    </Link>
+                  )}
                   <button
                     onClick={handleLogout}
                     className="flex w-full items-center gap-2 px-4 py-2 font-mono text-[10px] tracking-widest text-muted-foreground transition-colors hover:text-neon-pink hover:bg-neon-pink/5"

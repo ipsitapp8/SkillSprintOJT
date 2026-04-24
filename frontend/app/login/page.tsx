@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, type FormEvent } from "react"
+import { useState, useEffect, Suspense, type FormEvent } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import {
   ChevronRight,
@@ -33,6 +33,14 @@ function HudCorner({ className }: { className?: string }) {
 }
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen bg-deep-bg"><span className="font-mono text-xs tracking-widest text-neon-cyan animate-pulse">LOADING...</span></div>}>
+      <LoginContent />
+    </Suspense>
+  )
+}
+
+function LoginContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { checkAuth, isAuthenticated, isLoading: authLoading } = useAuth()

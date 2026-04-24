@@ -100,7 +100,7 @@ Respond ONLY with JSON.`, question, correctAnswer, userAnswer, maxScore)
 
 type GeneratedQuestion struct {
 	Prompt        string   `json:"prompt"`
-	Type          string   `json:"type"` // mcq, debug_code, fix_code, logic_explanation
+	Type          string   `json:"type"`              // mcq, debug_code, fix_code, logic_explanation
 	Options       []string `json:"options,omitempty"` // for mcq
 	CorrectAnswer string   `json:"correctAnswer"`
 	Explanation   string   `json:"explanation"`

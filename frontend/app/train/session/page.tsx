@@ -1,11 +1,19 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { ProtectedRoute } from "@/components/ProtectedRoute"
 import { Loader2, Zap, Brain, Target, Timer, UserCheck } from "lucide-react"
 
 export default function SessionInitPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen bg-deep-bg"><span className="font-mono text-xs tracking-widest text-neon-cyan animate-pulse">LOADING...</span></div>}>
+      <SessionInitContent />
+    </Suspense>
+  )
+}
+
+function SessionInitContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const topic = searchParams.get("topic")
