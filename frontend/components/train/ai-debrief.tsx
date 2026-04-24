@@ -23,7 +23,7 @@ export function AIDebrief({ isCorrect, feedback, explanation, concept }: AIDebri
         <div className="flex items-center gap-2">
            <Activity className={`h-3 w-3 ${isCorrect ? 'text-neon-cyan' : 'text-neon-pink'}`} />
            <span className="font-mono text-[9px] tracking-[0.3em] font-black uppercase text-foreground opacity-80">
-             {isCorrect ? 'NEURAL_SYNC_STABLE' : 'SYNC_FAILURE_DETECTED'}
+             {isCorrect ? 'ANSWER_VERIFIED' : 'ANSWER_INCORRECT'}
            </span>
         </div>
         {concept && (

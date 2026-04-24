@@ -116,8 +116,8 @@ export function ResultsContent({ id }: { id?: string }) {
     const speedFactor = Math.max(0.2, 1 - (totalTimeSec / expectedTime))
     const speedScore = Math.round(speedFactor * 100)
 
-    let strongAreas = []
-    let weakAreas = []
+    let strongAreas = accuracy > 70 ? [attempt.quiz?.title || "Current Domain"] : []
+    let weakAreas = accuracy < 70 ? [attempt.quiz?.title || "Current Domain"] : []
     let revisionConcept = "Syntax & Semantics"
 
     // Integrate with local history
@@ -128,15 +128,19 @@ export function ResultsContent({ id }: { id?: string }) {
     if (speedScore > 80 && accuracy > 80) {
        smartFeedback = `[ SYSTEM NOTE ]: Exceptional metrics. Sync optimization 100%. \n[ TACTICAL ]: ${diffRec.reason || 'Increasing system pressure is recommended.'}`
        revisionConcept = "Advanced Architectures"
+       strongAreas.push("Syntactic Velocity", "Pattern Recognition")
     } else if (accuracy > 70) {
        smartFeedback = `[ SYSTEM NOTE ]: Acceptable pass rate identified. Routine stable. \n[ TACTICAL ]: ${diffRec.reason || 'Sustain current parameters.'}`
        revisionConcept = "State Management"
+       strongAreas.push("Core Logic")
     } else if (speedScore > 80 && accuracy < 50) {
        smartFeedback = `[ WARNING ]: Reckless inputs detected. Velocity does not excuse syntax degradation. \n[ TACTICAL ]: ${diffRec.reason || 'Downgrading difficulty to foundational nodes.'}`
        revisionConcept = "Core Principles"
+       weakAreas.push("Accuracy Threshold", "Logic Verification")
     } else {
        smartFeedback = `[ SYSTEM NOTE ]: Accuracy below optimal threshold. \n[ TACTICAL ]: ${weaknesses}`
        revisionConcept = "Debugging Fundamentals"
+       weakAreas.push("Domain Knowledge", "Constraint Handling")
     }
 
     return { accuracy, correctCount, incorrectCount, totalTimeSec, speedScore, strongAreas, weakAreas, revisionConcept, smartFeedback, diffRec }

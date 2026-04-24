@@ -22,12 +22,15 @@ export function SessionSetupPanel({ topic, mode, onClose, onStart }: SessionSetu
     setError(null)
 
     try {
+      const normalizedTopic = topic.toLowerCase()
+      console.log("[TargetMode] Initializing Generation:", { topic: normalizedTopic, difficulty, count })
+
       const res = await fetch("http://localhost:8080/api/training/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          topic,
-          difficulty,
+          topic: normalizedTopic,
+          difficulty: difficulty.toLowerCase(),
           count
         }),
         credentials: "include"

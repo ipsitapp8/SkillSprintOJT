@@ -11,9 +11,17 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	// Load environment variables from .env file
+	if err := godotenv.Load(); err != nil {
+		log.Println("[ENV] No .env file found, using system environment variables")
+	} else {
+		log.Println("[ENV] Successfully loaded configuration from .env")
+	}
+
 	database.ConnectDB()
 
 	// Start leaderboard WebSocket hub
@@ -29,14 +37,21 @@ func main() {
 
 	r := gin.Default()
 
-	// Setup CORS to allow Next.js proxying requests
+	// Setup Robust CORS to allow Next.js communication
 	config := cors.DefaultConfig()
 	config.AllowOrigins = []string{"http://localhost:3000"}
+	config.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"}
+	config.AllowHeaders = []string{"Origin", "Content-Type", "Content-Length", "Accept", "Accept-Encoding", "X-CSRF-Token", "Authorization"}
 	config.AllowCredentials = true
 	r.Use(cors.New(config))
 
-	// Note: We mount to /api to match Next.js routes
 	api := r.Group("/api")
+	
+	// Administrative Utility
+	api.GET("/admin/reload-env", func(c *gin.Context) {
+		godotenv.Load()
+		c.JSON(200, gin.H{"status": "Neural Configuration Refreshed"})
+	})
 
 	// Auth Routes
 	auth := api.Group("/auth")
@@ -64,6 +79,10 @@ func main() {
 	api.GET("/topics", handlers.ListPublicTopics)
 	api.GET("/topics/:slug/tests", handlers.ListPublicTestsByTopic)
 
+	// Training Session (serves real DB-backed questions)
+	api.POST("/train/session", handlers.CreateTrainSession)
+	api.GET("/train/session/:id", handlers.GetTrainSessionDetail)
+
 	// Protected Routes (Attempts & Evaluation)
 	protected := api.Group("/")
 	protected.Use(middleware.JWTMiddleware())
@@ -73,12 +92,15 @@ func main() {
 		protected.POST("/evaluate-answer", handlers.EvaluateAnswer)
 		protected.POST("/training/verify", handlers.VerifyAnswer)
 		protected.POST("/training/generate", handlers.GenerateTrainingSession)
-
 		// User dashboard & results
 		protected.GET("/dashboard/stats", handlers.GetUserDashboardStats)
 		protected.GET("/dashboard/full", handlers.GetUserDashboardFull)
 		protected.GET("/results", handlers.ListUserResults)
 		protected.GET("/results/:attemptId", handlers.GetTestResult)
+
+		// Training module additions
+		protected.POST("/train/upload-notes", handlers.UploadNotes)
+		protected.GET("/training/session/:id", handlers.GetTrainingSession)
 	}
 
 	// Admin Routes (JWT + Admin role required)

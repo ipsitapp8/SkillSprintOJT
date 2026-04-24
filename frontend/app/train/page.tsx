@@ -131,56 +131,80 @@ export default function TrainPage() {
 
   const handleGenerateAI = async () => {
     if (!aiTopic.trim()) {
-      setAiError("DOMAIN SPECIFICATION REQUIRED")
-      return
+      setAiError("DOMAIN SPECIFICATION REQUIRED");
+      return;
     }
-    setAiError(null)
-    setAiLoading(true)
+    setAiError(null);
+    setAiLoading(true);
 
-    console.log("Calling AI API")
+    const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080";
+    const url = `${API_BASE}/api/training/generate`;
+
+    const payload = { 
+      topic: aiTopic.toLowerCase(),
+      difficulty: aiDifficulty.toLowerCase(), 
+      count: aiCount 
+    };
+
+    console.log("[AI_GEN] URL:", url);
+    console.log("[AI_GEN] Payload:", payload);
 
     try {
-      const payload = { topic: aiTopic, difficulty: aiDifficulty, questionCount: aiCount }
-      const res = await fetch("/api/train/generate-ai-session", {
+      const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      })
+        body: JSON.stringify(payload),
+        credentials: "include"
+      });
 
-      if (!res.ok) throw new Error("AI Endpoint uncoupled.")
+      console.log("[AI_GEN] Status:", res.status);
 
-      console.log("Response received. Status:", res.status)
-      const data = await res.json()
-      
-      if (!data.questions || data.questions.length === 0) throw new Error("Null generation matrix.")
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        const errorMsg = errData.error || `Generation failed (${res.status})`;
+        console.error("[AI_GEN] API error:", errorMsg);
+        
+        if (res.status === 401) {
+          setAiError("UNAUTHORIZED: PLEASE SIGN IN TO GENERATE AI SESSIONS");
+        } else {
+          setAiError(errorMsg);
+        }
+        setAiLoading(false);
+        return;
+      }
 
-      sessionStorage.setItem("skillsprint_pending_ai_session", JSON.stringify(data.questions))
-      router.push(`/train/play/synthetic_ai?topic=${encodeURIComponent("AI: " + aiTopic)}&mode=AI_SYNTH_MODE&difficulty=${encodeURIComponent(aiDifficulty)}`)
+      const data = await res.json();
+      console.log("[AI_GEN] Data Received:", data);
+
+      if (!data.sessionId && !data.session_id) {
+        console.error("[AI_GEN] No session ID in response");
+        setAiError("AI generation failed - no session created");
+        setAiLoading(false);
+        return;
+      }
+
+      if (!data.questions || data.questions.length === 0) {
+        console.error("[AI_GEN] No questions in response");
+        setAiError("AI generation failed - no questions generated");
+        setAiLoading(false);
+        return;
+      }
+
+      const sessionId = data.sessionId || data.session_id;
+      console.log("[AI_GEN] Redirecting to play:", sessionId);
+      router.push(`/train/play/${sessionId}?topic=${encodeURIComponent(aiTopic)}&mode=AI_SYNTH_MODE&difficulty=${encodeURIComponent(aiDifficulty)}&count=${aiCount}`);
     } catch (err: any) {
-      console.log("Fallback triggered")
-      setAiError("AI unavailable, using fallback")
-      
-      // Inline Fallback Generator
-      const mockQuestions = Array.from({ length: aiCount }).map((_, i) => ({
-        id: `AI_SYNTH_FALLBACK_${Math.random().toString(36).substring(7)}_${i}`,
-        type: "mcq",
-        prompt: `[ OFFLINE MOCK ]: Analyze this ${aiDifficulty} ${aiTopic} architectural implementation. Which logic branch optimizes process handling correctly? (Variant ${i + 1})`,
-        options: [
-          { id: "OPT_1", text: "Implement standardized execution wrappers." },
-          { id: "OPT_2", text: "Utilize optimized heuristic data structures." },
-          { id: "OPT_3", text: "Isolate faulty neural paths safely." },
-          { id: "OPT_4", text: "Force kernel panic to dump logs." }
-        ],
-        expectedAnswer: i % 2 === 0 ? "OPT_2" : "OPT_1",
-        explanation: `In a ${aiDifficulty} environment dealing with ${aiTopic}, this option correctly stabilizes the node without causing memory leakages.`
-      }))
-      
-      sessionStorage.setItem("skillsprint_pending_ai_session", JSON.stringify(mockQuestions))
-      router.push(`/train/play/synthetic_ai?topic=${encodeURIComponent("AI Fallback: " + aiTopic)}&mode=MOCK_MODE&difficulty=${encodeURIComponent(aiDifficulty)}`)
+      console.error("[AI_GEN] Fetch Exception:", err?.message);
+      // DISTINGUISH: Network Error vs App Error
+      if (err?.message?.includes("fetch") || err?.message?.includes("NetworkError")) {
+        setAiError("CONNECTIVITY FAILURE: BACKEND UNREACHABLE. CHECK SERVER STATUS.");
+      } else {
+        setAiError(err?.message || "AI SERVICES OFFLINE.");
+      }
     } finally {
-      setAiLoading(false)
+      setAiLoading(false);
     }
-  }
+  };
 
   // Auto-scroll logic and adaptive difficulty calculation
   useEffect(() => {
@@ -212,14 +236,15 @@ export default function TrainPage() {
 
     // Standardized Mapping: Ensure frontend IDs match backend combat arenas
     const topicIDMap: Record<string, string> = {
-      "DSA": "dsa_arena",
-      "DBMS": "dbms_arena",
-      "OS": "os_arena",
-      "JAVASCRIPT": "js_arena",
-      "APTITUDE": "aptitude_arena"
+      "DSA": "dsa",
+      "DBMS": "dbms",
+      "OS": "os",
+      "JAVASCRIPT": "javascript",
+      "APTITUDE": "aptitude"
     }
 
-    const arenaId = topicIDMap[topic] || topic.toLowerCase().replace(/\s+/g, '_') + "_arena"
+    const arenaId = topicIDMap[topic] || topic.toLowerCase().replace(/\s+/g, '_')
+    console.log("[TrainHub] Session Starting:", { topic, arenaId, mode })
     router.push(`/train/play/${arenaId}?topic=${encodeURIComponent(topic)}&mode=${encodeURIComponent(mode)}&difficulty=${encodeURIComponent(adaptiveDifficulty)}`)
   }
 

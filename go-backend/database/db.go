@@ -29,7 +29,6 @@ func ConnectDB() {
 		&models.Option{},
 		&models.Attempt{},
 		&models.AttemptAnswer{},
-
 		// Test module models
 		&models.Topic{},
 		&models.Test{},
@@ -40,6 +39,11 @@ func ConnectDB() {
 		&models.TestAttempt{},
 		&models.TestSubmission{},
 		&models.TestResult{},
+
+		// Training module models
+		&models.TrainingQuestion{},
+		&models.TrainingSession{},
+		&models.Upload{},
 	)
 	if err != nil {
 		log.Println("Database migration error (ignoring if table already populated):", err)
@@ -58,4 +62,6 @@ func ConnectDB() {
 
 	// Basic check to seed data if empty
 	SeedDB()
+	// Seed training questions (runs only once)
+	SeedTrainingQuestions()
 }
