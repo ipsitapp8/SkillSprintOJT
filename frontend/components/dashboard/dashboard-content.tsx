@@ -84,7 +84,7 @@ export function DashboardContent() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    async function fetchDashboard() {
+    const fetchDashboard = async () => {
       try {
         // Fetch user info
         const meRes = await fetch(`${API_BASE}/api/auth/me`, { credentials: "include" })
@@ -100,7 +100,7 @@ export function DashboardContent() {
           setData(json)
         }
       } catch (err) {
-        console.error(err)
+        console.error("Dashboard Fetch Error:", err)
       } finally {
         setLoading(false)
       }
@@ -118,17 +118,20 @@ export function DashboardContent() {
   }
 
   if (!data || !user) {
-     return (
-       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 text-center">
-          <Shield className="h-12 w-12 text-neon-pink mb-2" />
-          <h2 className="text-xl font-bold text-foreground">ACCESS DENIED</h2>
-          <p className="text-muted-foreground text-sm max-w-xs">Please login to access your personal command center and track your rank.</p>
-          <Link href="/login" className="px-8 py-3 bg-neon-cyan font-mono text-xs font-bold text-deep-bg tracking-widest">LOGIN NOW</Link>
-       </div>
-     )
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 text-center">
+        <Shield className="h-12 w-12 text-neon-pink mb-2" />
+        <h2 className="text-xl font-bold text-foreground">ACCESS DENIED</h2>
+        <p className="text-muted-foreground text-sm max-w-xs">Please login to access your command center and track your progress.</p>
+        <Link href="/login" className="px-8 py-3 bg-neon-cyan font-mono text-xs font-bold text-deep-bg tracking-widest hover:bg-neon-cyan/90 transition-all">LOGIN NOW</Link>
+      </div>
+    )
   }
 
-  const displayName = user.username && !user.username.includes('@') ? user.username : user.email?.split('@')[0]
+  const displayName = user.username && !user.username.includes('@') 
+    ? user.username 
+    : (user.email?.split('@')[0] || "OPERATOR")
+
   const tierInfo = tierConfig[data.tier] || tierConfig.UNRANKED
   const TierIcon = tierInfo.icon
 
