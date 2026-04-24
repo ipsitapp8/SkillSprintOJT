@@ -12,7 +12,7 @@ import {
   Zap,
   Loader2,
 } from "lucide-react"
-import { getApiBase } from "@/lib/api-config"
+import { API_BASE } from "@/lib/api-config"
 
 interface Question {
   id: string;
@@ -55,7 +55,6 @@ export function LiveArena({ arenaId }: { arenaId: string }) {
 
   const fetchQuizData = useCallback(async () => {
     try {
-      const API_BASE = getApiBase();
       // 1. Get Quizzes
       const quizRes = await fetch(`${API_BASE}/api/arenas/${arenaId}/quizzes`)
       if (!quizRes.ok) throw new Error("Failed to fetch quiz")
@@ -109,7 +108,6 @@ export function LiveArena({ arenaId }: { arenaId: string }) {
           answers: [...answers, currentAnswer]
         }
         
-        const API_BASE = getApiBase();
         const res = await fetch(`${API_BASE}/api/attempts`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },

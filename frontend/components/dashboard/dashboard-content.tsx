@@ -23,7 +23,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { PerformanceChart } from "./performance-chart"
-import { getApiBase } from "@/lib/api-config"
+import { API_BASE } from "@/lib/api-config"
 
 interface DashboardData {
   stats: {
@@ -86,7 +86,6 @@ export function DashboardContent() {
   useEffect(() => {
     async function fetchDashboard() {
       try {
-        const API_BASE = getApiBase();
         // Fetch user info
         const meRes = await fetch(`${API_BASE}/api/auth/me`, { credentials: "include" })
         if (meRes.ok) {

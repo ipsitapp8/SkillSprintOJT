@@ -16,7 +16,7 @@ import {
 } from "lucide-react"
 import { saveSessionMetrics } from "@/lib/training-history"
 import { QuestionRenderer } from "./QuestionRenderer"
-import { getApiBase } from "@/lib/api-config"
+import { API_BASE } from "@/lib/api-config"
 
 interface Question {
   id: string
@@ -161,8 +161,6 @@ export function TrainingSolver({ initialQuestions, topic, mode, difficulty, coun
     try {
       const controller = new AbortController()
       const timeout = setTimeout(() => controller.abort(), 12000) // 12s timeout
-
-      const API_BASE = getApiBase();
       const res = await fetch(`${API_BASE}/api/training/verify`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -318,7 +316,6 @@ export function TrainingSolver({ initialQuestions, topic, mode, difficulty, coun
 
         sessionStorage.setItem("skillsprint_train_result", JSON.stringify(localFallbackResult))
         
-        const API_BASE = getApiBase();
         // Fire and forget backend sync! Instantly navigate so the user isn't blocked.
         fetch(`${API_BASE}/api/attempts`, {
           method: "POST",

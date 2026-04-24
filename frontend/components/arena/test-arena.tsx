@@ -18,7 +18,7 @@ import {
   XCircle,
   AlertTriangle,
 } from "lucide-react"
-import { getApiBase, getWsBase } from "@/lib/api-config"
+import { API_BASE, WS_BASE } from "@/lib/api-config"
 
 // Removed hardcoded API constant
 
@@ -173,7 +173,6 @@ function TestList({ onJoined }: { onJoined: (attemptId: string, testId: string) 
   useEffect(() => {
     async function fetchTests() {
       try {
-        const API_BASE = getApiBase();
         const res = await fetch(`${API_BASE}/api/arena/tests`, { credentials: "include" })
         if (res.ok) setTests(await res.json())
       } catch (e) {
@@ -188,7 +187,6 @@ function TestList({ onJoined }: { onJoined: (attemptId: string, testId: string) 
   async function handleJoin(testId: string) {
     setJoiningId(testId)
     try {
-      const API_BASE = getApiBase();
       const res = await fetch(`${API_BASE}/api/arena/tests/${testId}/join`, {
         method: "POST",
         credentials: "include",
@@ -368,7 +366,6 @@ function ActiveTest({ attemptId, onExit }: { attemptId: string; onExit: () => vo
   // Fetch attempt data
   const fetchAttempt = useCallback(async () => {
     try {
-      const API_BASE = getApiBase();
       const res = await fetch(`${API_BASE}/api/arena/attempts/${attemptId}`, { credentials: "include" })
       if (!res.ok) {
         onExit()
@@ -404,7 +401,6 @@ function ActiveTest({ attemptId, onExit }: { attemptId: string; onExit: () => vo
     if (loading || submitted) return
 
     function connectWS() {
-      const WS_BASE = getWsBase();
       const ws = new WebSocket(`${WS_BASE}/ws/arena/${attemptId}`)
       wsRef.current = ws
 
@@ -518,7 +514,6 @@ function ActiveTest({ attemptId, onExit }: { attemptId: string; onExit: () => vo
     if (draftSaveRef.current) clearTimeout(draftSaveRef.current)
     draftSaveRef.current = setTimeout(async () => {
       try {
-        const API_BASE = getApiBase();
         await fetch(`${API_BASE}/api/arena/submissions/draft`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -545,7 +540,6 @@ function ActiveTest({ attemptId, onExit }: { attemptId: string; onExit: () => vo
     })
 
     try {
-      const API_BASE = getApiBase();
       await fetch(`${API_BASE}/api/arena/submissions/mcq`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -566,7 +560,6 @@ function ActiveTest({ attemptId, onExit }: { attemptId: string; onExit: () => vo
     setSubmitResult(null)
     setCompileError(null)
     try {
-      const API_BASE = getApiBase();
       const res = await fetch(`${API_BASE}/api/arena/submissions/run`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -599,7 +592,6 @@ function ActiveTest({ attemptId, onExit }: { attemptId: string; onExit: () => vo
     setRunResults(null)
     setCompileError(null)
     try {
-      const API_BASE = getApiBase();
       const res = await fetch(`${API_BASE}/api/arena/submissions/code`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -638,7 +630,6 @@ function ActiveTest({ attemptId, onExit }: { attemptId: string; onExit: () => vo
   // ── Submit entire attempt ──
   async function handleSubmitAttempt() {
     try {
-      const API_BASE = getApiBase();
       const res = await fetch(`${API_BASE}/api/arena/attempts/${attemptId}/submit`, {
         method: "POST",
         credentials: "include",
