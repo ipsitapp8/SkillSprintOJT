@@ -23,6 +23,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { PerformanceChart } from "./performance-chart"
+import { getApiBase } from "@/lib/api-config"
 
 interface DashboardData {
   stats: {
@@ -85,15 +86,16 @@ export function DashboardContent() {
   useEffect(() => {
     async function fetchDashboard() {
       try {
+        const API_BASE = getApiBase();
         // Fetch user info
-        const meRes = await fetch("http://localhost:8080/api/auth/me", { credentials: "include" })
+        const meRes = await fetch(`${API_BASE}/api/auth/me`, { credentials: "include" })
         if (meRes.ok) {
           const meData = await meRes.json()
           setUser({ username: meData.username, email: meData.email })
         }
 
         // Fetch full dashboard
-        const res = await fetch("http://localhost:8080/api/dashboard/full", { credentials: "include" })
+        const res = await fetch(`${API_BASE}/api/dashboard/full`, { credentials: "include" })
         if (res.ok) {
           const json = await res.json()
           setData(json)

@@ -23,6 +23,7 @@ import {
 } from "lucide-react"
 import { AIDebrief } from "@/components/train/ai-debrief"
 import { recommendDifficulty, analyzeWeaknesses } from "@/lib/training-history"
+import { getApiBase } from "@/lib/api-config"
 
 interface Attempt {
   id: string;
@@ -75,7 +76,8 @@ export function ResultsContent({ id }: { id?: string }) {
       // This happens silently behind the scenes if we already rendered local data.
       if (id && id !== 'local') {
         try {
-          const res = await fetch(`http://localhost:8080/api/attempts/${id}`, { credentials: "include" })
+          const API_BASE = getApiBase();
+          const res = await fetch(`${API_BASE}/api/attempts/${id}`, { credentials: "include" })
           if (res.ok) {
             const data = await res.json()
             setAttempt(data.attempt)

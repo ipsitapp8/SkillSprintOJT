@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { X, Target, Zap, ChevronRight, Info, Brain, ShieldAlert } from "lucide-react"
 import { SynthesisLoadingHUD } from "./SynthesisLoadingHUD"
+import { getApiBase } from "@/lib/api-config"
 
 interface SessionSetupPanelProps {
   topic: string
@@ -26,7 +27,8 @@ export function SessionSetupPanel({ topic, mode, onClose, onStart }: SessionSetu
       const normalizedTopic = topic.toLowerCase()
       console.log("[TargetMode] Initializing Generation:", { topic: normalizedTopic, difficulty, count })
 
-      const res = await fetch("http://localhost:8080/api/training/generate", {
+      const API_BASE = getApiBase();
+      const res = await fetch(`${API_BASE}/api/training/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

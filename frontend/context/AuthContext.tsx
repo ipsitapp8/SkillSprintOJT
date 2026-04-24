@@ -2,6 +2,7 @@
 
 import React, { createContext, useState, useEffect, ReactNode } from "react"
 import { useRouter } from "next/navigation"
+import { getApiBase } from "@/lib/api-config"
 
 export interface User {
   id: string
@@ -29,7 +30,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const checkAuth = async () => {
     try {
-      const res = await fetch("http://localhost:8080/api/auth/me", {
+      const API_BASE = getApiBase();
+      const res = await fetch(`${API_BASE}/api/auth/me`, {
         credentials: "include",
       })
       if (res.ok) {
@@ -52,7 +54,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
-      await fetch("http://localhost:8080/api/auth/logout", {
+      const API_BASE = getApiBase();
+      await fetch(`${API_BASE}/api/auth/logout`, {
         method: "POST",
         credentials: "include",
       })
