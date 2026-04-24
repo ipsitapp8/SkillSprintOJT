@@ -40,7 +40,10 @@ func main() {
 
 	// Setup Robust CORS to allow Next.js communication
 	config := cors.DefaultConfig()
-	config.AllowOrigins = []string{"http://localhost:3000"}
+	config.AllowOrigins = []string{
+		"http://localhost:3000",
+		"https://skill-sprint-ojt-xxxxx.vercel.app",
+	}
 	config.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"}
 	config.AllowHeaders = []string{"Origin", "Content-Type", "Content-Length", "Accept", "Accept-Encoding", "X-CSRF-Token", "Authorization"}
 	config.AllowCredentials = true
