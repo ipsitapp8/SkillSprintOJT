@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"time"
 
 	"backend/arena"
 	"backend/database"
@@ -39,16 +40,24 @@ func main() {
 	r := gin.Default()
 
 	// Setup Robust CORS to allow Next.js communication
-	config := cors.DefaultConfig()
-	config.AllowOrigins = []string{
-		"http://localhost:3000",
-		"https://skill-sprint-ojt.vercel.app",
-		"https://skill-sprint-ojt-git-main-ipsitapp8s-projects.vercel.app",
+	config := cors.Config{
+		AllowOrigins: []string{
+			"http://localhost:3000",
+			"https://skill-sprint-ojt.vercel.app",
+			"https://skill-sprint-ojt-git-main-ipsitapp8s-projects.vercel.app",
+		},
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Content-Length", "Accept", "Accept-Encoding", "X-CSRF-Token", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
 	}
-	config.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"}
-	config.AllowHeaders = []string{"Origin", "Content-Type", "Content-Length", "Accept", "Accept-Encoding", "X-CSRF-Token", "Authorization"}
-	config.AllowCredentials = true
 	r.Use(cors.New(config))
+
+	// Explicitly handle OPTIONS for all paths
+	r.OPTIONS("/*path", func(c *gin.Context) {
+		c.Status(200)
+	})
 
 	api := r.Group("/api")
 	
