@@ -42,7 +42,7 @@ func main() {
 	config := cors.DefaultConfig()
 	config.AllowOrigins = []string{
 		"http://localhost:3000",
-		"https://skill-sprint-ojt-xxxxx.vercel.app",
+		"https://skill-sprint-ojt-git-main-ipsitapp8s-projects.vercel.app",
 	}
 	config.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"}
 	config.AllowHeaders = []string{"Origin", "Content-Type", "Content-Length", "Accept", "Accept-Encoding", "X-CSRF-Token", "Authorization"}
