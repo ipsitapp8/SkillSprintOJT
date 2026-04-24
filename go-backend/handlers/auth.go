@@ -75,9 +75,20 @@ func generateAuthToken(user models.User) (string, error) {
 	return token.SignedString(middleware.JWT_SECRET)
 }
 
-// setAuthCookie sets the auth_token cookie matching Next.js expectations.
+// setAuthCookie sets the auth_token cookie with cross-origin support.
+// Uses http.SetCookie directly because Gin's c.SetCookie doesn't support SameSite.
+// For production (Vercel→Render), cookies MUST have Secure=true and SameSite=None
+// or the browser will silently reject them on cross-origin requests.
 func setAuthCookie(c *gin.Context, tokenString string) {
-	c.SetCookie("auth_token", tokenString, int(7*24*time.Hour/time.Second), "/", "", false, true)
+	http.SetCookie(c.Writer, &http.Cookie{
+		Name:     "auth_token",
+		Value:    tokenString,
+		Path:     "/",
+		MaxAge:   int(7 * 24 * time.Hour / time.Second),
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteNoneMode,
+	})
 }
 
 // ──────────────────────────────────────────────
@@ -300,8 +311,16 @@ func MeHandler(c *gin.Context) {
 // LogoutHandler → POST /api/auth/logout
 // ──────────────────────────────────────────────
 func LogoutHandler(c *gin.Context) {
-	// Erase cookie
-	c.SetCookie("auth_token", "", -1, "/", "", false, true)
+	// Erase cookie — must match same attributes (Secure, SameSite, Path) as login
+	http.SetCookie(c.Writer, &http.Cookie{
+		Name:     "auth_token",
+		Value:    "",
+		Path:     "/",
+		MaxAge:   -1,
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteNoneMode,
+	})
 	c.JSON(http.StatusOK, gin.H{"success": true})
 }
 
