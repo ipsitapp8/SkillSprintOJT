@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"os"
 
 	"backend/arena"
 	"backend/database"
@@ -162,8 +163,13 @@ func main() {
 	r.GET("/ws/leaderboard/:testId", handlers.LeaderboardWS)
 	r.GET("/ws/arena/:attemptId", handlers.ArenaSessionWS)
 
-	log.Println("Starting Gin server on :8080")
-	if err := r.Run(":8080"); err != nil {
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	log.Printf("Starting Gin server on 0.0.0.0:%s", port)
+	if err := r.Run("0.0.0.0:" + port); err != nil {
 		log.Fatal("Server failed to start:", err)
 	}
 }
