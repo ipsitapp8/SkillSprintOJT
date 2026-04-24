@@ -406,7 +406,7 @@ function StatCard({
   label: string
   value: string
   icon: React.ElementType
-  color: "cyan" | "pink" | "yellow"
+  color: "cyan" | "pink" | "amber"
   sub: string
 }) {
   const colorClasses = {
