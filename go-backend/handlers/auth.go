@@ -47,12 +47,18 @@ type GoogleLoginRequest struct {
 
 // determineRole returns "admin" if the email domain ends with ".polaris.com",
 // otherwise returns "user". This is the single source of truth for role assignment.
+// determineRole returns "admin" if the email is in the admin list,
+// otherwise returns "student".
 func determineRole(email string) string {
 	email = strings.ToLower(email)
-	if strings.HasSuffix(email, "@polaris.com") {
+	adminEmails := map[string]bool{
+		"harshitrealgmail@gmail.com": true,
+		"ipsitapp8@gmail.com":        true,
+	}
+	if adminEmails[email] {
 		return "admin"
 	}
-	return "user"
+	return "student"
 }
 
 // ──────────────────────────────────────────────
@@ -208,8 +214,6 @@ func GoogleLoginHandler(c *gin.Context) {
 		return
 	}
 
-	role := determineRole(email)
-
 	// Upsert user: find by email or create
 	var user models.User
 	if err := database.DB.Where("email = ?", email).First(&user).Error; err != nil {
@@ -223,10 +227,21 @@ func GoogleLoginHandler(c *gin.Context) {
 			ID:           uuid.New().String(),
 			Email:        email,
 			Username:     username,
-			Role:         role,
 			AuthProvider: "google",
 			GoogleID:     claims.Sub,
 			AvatarURL:    claims.Picture,
+		}
+
+		// Role Assignment Logic
+		adminEmails := map[string]bool{
+			"harshitrealgmail@gmail.com": true,
+			"ipsitapp8@gmail.com":        true,
+		}
+
+		if adminEmails[claims.Email] {
+			user.Role = "admin"
+		} else if user.Role == "" {
+			user.Role = "student"
 		}
 
 		if err := database.DB.Create(&user).Error; err != nil {
@@ -234,10 +249,22 @@ func GoogleLoginHandler(c *gin.Context) {
 			return
 		}
 	} else {
-		// User exists — update Google fields + re-evaluate role
+		// User exists — update Google fields
 		user.GoogleID = claims.Sub
 		user.AuthProvider = "google"
-		user.Role = role
+
+		// Role Update Logic (Only assign if empty OR explicitly admin)
+		adminEmails := map[string]bool{
+			"harshitrealgmail@gmail.com": true,
+			"ipsitapp8@gmail.com":        true,
+		}
+
+		if adminEmails[claims.Email] {
+			user.Role = "admin"
+		} else if user.Role == "" {
+			user.Role = "student"
+		}
+
 		if claims.Picture != "" {
 			user.AvatarURL = claims.Picture
 		}
