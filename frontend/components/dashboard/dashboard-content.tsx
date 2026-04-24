@@ -3,26 +3,79 @@
 import { useEffect, useState } from "react"
 import {
   Activity,
+  Award,
+  BarChart3,
   Brain,
   ChevronRight,
   Clock,
   Crown,
   Flame,
-  Ghost,
+  Loader2,
   Shield,
+  Skull,
+  Star,
   Swords,
   Target,
-  Timer,
+  TrendingDown,
+  TrendingUp,
   Trophy,
   Zap,
-  Loader2,
 } from "lucide-react"
 import Link from "next/link"
 import { PerformanceChart } from "./performance-chart"
 
-interface UserData {
-  username: string;
+interface DashboardData {
   stats: {
+ main
+    totalAttempts: number
+    highScore: number
+    avgScore: number
+    totalScore: number
+  }
+  globalRank: number
+  totalParticipants: number
+  tier: string
+  topicAnalysis: Array<{
+    topicId: string
+    topicName: string
+    testsTaken: number
+    avgScore: number
+    maxScore: number
+    totalScore: number
+    maxPossible: number
+    percentage: number
+  }>
+  strongPoints: string[]
+  weakPoints: string[]
+  performanceTrend: Array<{
+    testTitle: string
+    score: number
+    percentage: number
+    date: string
+  }>
+  completedTests: Array<{
+    attemptId: string
+    testId: string
+    testTitle: string
+    topicName: string
+    score: number
+    maxPossible: number
+    percentage: number
+    isAutoSubmitted: boolean
+    submittedAt: string
+  }>
+  activeTestCount: number
+}
+
+const tierConfig: Record<string, { icon: React.ElementType; color: string; glowClass: string }> = {
+  APEX: { icon: Crown, color: "text-neon-amber", glowClass: "text-glow-amber" },
+  CHAMPION: { icon: Skull, color: "text-neon-pink", glowClass: "text-glow-pink" },
+  VETERAN: { icon: Flame, color: "text-neon-amber", glowClass: "text-glow-amber" },
+  ELITE: { icon: Star, color: "text-neon-cyan", glowClass: "text-glow-cyan" },
+  WARRIOR: { icon: Shield, color: "text-muted-foreground", glowClass: "" },
+  ROOKIE: { icon: Target, color: "text-muted-foreground", glowClass: "" },
+  UNRANKED: { icon: Target, color: "text-muted-foreground", glowClass: "" },
+
     totalAttempts: number;
     highScore: number;
     avgScore: number;
@@ -35,16 +88,26 @@ interface UserData {
     quiz: { title: string };
   }>;
   email?: string;
+ main
 }
 
 export function DashboardContent() {
-  const [data, setData] = useState<UserData | null>(null)
+  const [data, setData] = useState<DashboardData | null>(null)
+  const [user, setUser] = useState<{ username?: string; email?: string } | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    async function fetchMe() {
+    async function fetchDashboard() {
       try {
-        const res = await fetch("http://localhost:8080/api/auth/me", { credentials: "include" })
+        // Fetch user info
+        const meRes = await fetch("http://localhost:8080/api/auth/me", { credentials: "include" })
+        if (meRes.ok) {
+          const meData = await meRes.json()
+          setUser({ username: meData.username, email: meData.email })
+        }
+
+        // Fetch full dashboard
+        const res = await fetch("http://localhost:8080/api/dashboard/full", { credentials: "include" })
         if (res.ok) {
           const json = await res.json()
           setData(json)
@@ -55,7 +118,7 @@ export function DashboardContent() {
         setLoading(false)
       }
     }
-    fetchMe()
+    fetchDashboard()
   }, [])
 
   if (loading) {
@@ -67,7 +130,7 @@ export function DashboardContent() {
     )
   }
 
-  if (!data) {
+  if (!data || !user) {
      return (
        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 text-center">
           <Shield className="h-12 w-12 text-neon-pink mb-2" />
@@ -77,6 +140,10 @@ export function DashboardContent() {
        </div>
      )
   }
+
+  const displayName = user.username && !user.username.includes('@') ? user.username : user.email?.split('@')[0]
+  const tierInfo = tierConfig[data.tier] || tierConfig.UNRANKED
+  const TierIcon = tierInfo.icon
 
   return (
     <div className="relative min-h-screen">
@@ -93,7 +160,7 @@ export function DashboardContent() {
               </span>
             </div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-              WELCOME BACK, <span className="text-neon-cyan text-glow-cyan uppercase">{data.username && !data.username.includes('@') ? data.username : data.email?.split('@')[0]}</span>
+              WELCOME BACK, <span className="text-neon-cyan text-glow-cyan uppercase">{displayName}</span>
             </h1>
           </div>
           <Link
@@ -109,11 +176,11 @@ export function DashboardContent() {
         {/* Top stats row */}
         <div className="grid gap-3 grid-cols-2 lg:grid-cols-4 mb-6">
           <StatCard
-            label="TOTAL BATTLES"
+            label="TESTS COMPLETED"
             value={data.stats.totalAttempts.toString()}
             icon={Activity}
             color="cyan"
-            sub="ATTEMPTS"
+            sub="SUBMITTED"
           />
           <StatCard
             label="PEAK SCORE"
@@ -124,22 +191,22 @@ export function DashboardContent() {
           />
           <StatCard
             label="AVG PERFORMANCE"
-            value={data.stats.avgScore.toFixed(1)}
+            value={data.stats.avgScore ? data.stats.avgScore.toFixed(1) : "0"}
             icon={Target}
             color="pink"
-            sub="ACCURACY OFFSET"
+            sub="MEAN SCORE"
           />
           <StatCard
-            label="ACTIVE STATUS"
-            value="READY"
+            label="TOTAL SCORE"
+            value={data.stats.totalScore.toString()}
             icon={Flame}
             color="cyan"
-            sub="SYSTEM OK"
+            sub="CUMULATIVE XP"
           />
         </div>
 
         <div className="grid gap-6 lg:grid-cols-3 mb-6">
-          {/* Top Row: Chart (Left) and Sidebar (Right) */}
+          {/* Chart (Left) */}
           <div className="lg:col-span-2 border border-panel-border bg-panel-bg/60 p-6 flex flex-col">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
@@ -150,11 +217,13 @@ export function DashboardContent() {
               </div>
             </div>
             <div className="flex-1 min-h-[300px]">
-              <PerformanceChart />
+              <PerformanceChart data={data.performanceTrend} />
             </div>
           </div>
 
+          {/* Sidebar (Right) */}
           <div className="flex flex-col gap-6">
+            {/* Rank Card */}
             <div className="flex-1 border border-panel-border bg-panel-bg/60 p-6">
               <div className="flex items-center gap-3 mb-6">
                 <Zap className="h-4 w-4 text-neon-cyan" />
@@ -164,11 +233,20 @@ export function DashboardContent() {
               </div>
               <div className="flex flex-col gap-4">
                 <div className="group p-4 border border-neon-yellow/20 bg-neon-yellow/5 transition-all duration-300 hover:border-neon-yellow/60 hover:shadow-[0_0_20px_rgba(251,191,36,0.1)]">
-                  <span className="block font-mono text-[9px] text-neon-yellow/60 group-hover:text-neon-yellow mb-1 uppercase transition-colors">CURRENT RANK</span>
-                  <span className="font-mono text-xl font-bold text-neon-yellow/80 group-hover:text-neon-yellow group-hover:text-glow-yellow uppercase transition-all">VETERAN</span>
+                  <span className="block font-mono text-[9px] text-neon-yellow/60 group-hover:text-neon-yellow mb-1 uppercase transition-colors">CURRENT TIER</span>
+                  <div className="flex items-center gap-3">
+                    <TierIcon className={`h-5 w-5 ${tierInfo.color}`} />
+                    <span className={`font-mono text-xl font-bold ${tierInfo.color} ${tierInfo.glowClass} uppercase transition-all`}>{data.tier}</span>
+                  </div>
                 </div>
+                {data.globalRank > 0 && (
+                  <div className="flex items-center justify-between px-4 py-3 border border-panel-border/50 bg-secondary/10">
+                    <span className="font-mono text-[10px] text-muted-foreground uppercase">GLOBAL RANK</span>
+                    <span className="font-mono text-lg font-bold text-neon-cyan">#{data.globalRank}<span className="text-xs text-muted-foreground ml-1">/ {data.totalParticipants}</span></span>
+                  </div>
+                )}
                 <p className="text-[10px] font-mono text-muted-foreground leading-relaxed">
-                  Complete more matches with high efficiency to upgrade your classification status.
+                  Complete more tests with high efficiency to upgrade your classification status.
                 </p>
               </div>
             </div>
@@ -183,20 +261,108 @@ export function DashboardContent() {
           </div>
         </div>
 
-        {/* Bottom Row: Recent Logs (Full Width) */}
+        {/* Topic Analysis + Strengths/Weaknesses Row */}
+        {data.topicAnalysis.length > 0 && (
+          <div className="grid gap-6 lg:grid-cols-3 mb-6">
+            {/* Topic Breakdown */}
+            <div className="lg:col-span-2 border border-panel-border bg-panel-bg/60 p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <BarChart3 className="h-4 w-4 text-neon-cyan" />
+                <span className="font-mono text-[11px] tracking-[0.2em] text-foreground uppercase">
+                  TOPIC-WISE ANALYSIS
+                </span>
+              </div>
+              <div className="flex flex-col gap-3">
+                {data.topicAnalysis.map((topic) => (
+                  <div key={topic.topicId || topic.topicName} className="flex items-center gap-4 px-4 py-3 border border-panel-border/30 bg-secondary/5 hover:bg-secondary/10 transition-all">
+                    <div className="flex-1 min-w-0">
+                      <span className="block font-mono text-xs font-bold text-foreground uppercase truncate">{topic.topicName}</span>
+                      <span className="font-mono text-[10px] text-muted-foreground">{topic.testsTaken} test{topic.testsTaken !== 1 ? 's' : ''} // Avg: {topic.avgScore.toFixed(1)}</span>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="w-32 h-2 bg-panel-border/30 overflow-hidden">
+                        <div
+                          className="h-full transition-all duration-500"
+                          style={{
+                            width: `${Math.min(topic.percentage, 100)}%`,
+                            backgroundColor: topic.percentage >= 70 ? '#00f0ff' : topic.percentage >= 40 ? '#fbbf24' : '#ff2d6f',
+                          }}
+                        />
+                      </div>
+                      <span className={`font-mono text-sm font-bold min-w-[48px] text-right ${
+                        topic.percentage >= 70 ? 'text-neon-cyan' : topic.percentage >= 40 ? 'text-neon-yellow' : 'text-neon-pink'
+                      }`}>
+                        {topic.percentage.toFixed(0)}%
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Strengths & Weaknesses */}
+            <div className="flex flex-col gap-6">
+              {/* Strong Points */}
+              <div className="flex-1 border border-panel-border bg-panel-bg/60 p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <TrendingUp className="h-4 w-4 text-neon-cyan" />
+                  <span className="font-mono text-[11px] tracking-[0.2em] text-foreground uppercase">
+                    STRONG POINTS
+                  </span>
+                </div>
+                {data.strongPoints.length > 0 ? (
+                  <div className="flex flex-col gap-2">
+                    {data.strongPoints.map((point) => (
+                      <div key={point} className="flex items-center gap-3 px-3 py-2 border border-neon-cyan/15 bg-neon-cyan/5">
+                        <div className="h-1.5 w-1.5 rounded-full bg-neon-cyan" />
+                        <span className="font-mono text-xs text-neon-cyan uppercase">{point}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="font-mono text-[10px] text-muted-foreground">Complete more tests to identify strengths.</p>
+                )}
+              </div>
+
+              {/* Weak Points */}
+              <div className="flex-1 border border-panel-border bg-panel-bg/60 p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <TrendingDown className="h-4 w-4 text-neon-pink" />
+                  <span className="font-mono text-[11px] tracking-[0.2em] text-foreground uppercase">
+                    NEEDS IMPROVEMENT
+                  </span>
+                </div>
+                {data.weakPoints.length > 0 ? (
+                  <div className="flex flex-col gap-2">
+                    {data.weakPoints.map((point) => (
+                      <div key={point} className="flex items-center gap-3 px-3 py-2 border border-neon-pink/15 bg-neon-pink/5">
+                        <div className="h-1.5 w-1.5 rounded-full bg-neon-pink" />
+                        <span className="font-mono text-xs text-neon-pink uppercase">{point}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="font-mono text-[10px] text-muted-foreground">Keep performing well across all topics!</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Recent Completed Tests */}
         <div className="border border-panel-border bg-panel-bg/60 p-6">
           <div className="flex items-center gap-3 mb-6">
             <Clock className="h-4 w-4 text-neon-pink" />
             <span className="font-mono text-[11px] tracking-[0.2em] text-foreground uppercase">
-              RECENT LOGS
+              RECENT BATTLE LOGS
             </span>
           </div>
 
           <div className="flex flex-col gap-2">
-            {data.recentAttempts.map((match) => (
+            {data.completedTests.map((test) => (
               <Link
-                key={match.id}
-                href={`/results/${match.id}`}
+                key={test.attemptId}
+                href={`/results/${test.attemptId}`}
                 className="flex items-center gap-4 border border-panel-border/50 bg-secondary/20 px-4 py-3 transition-all hover:bg-secondary/30"
               >
                 <div className="flex h-8 w-8 items-center justify-center border border-neon-cyan/30 text-neon-cyan">
@@ -205,17 +371,30 @@ export function DashboardContent() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="font-mono text-xs font-bold tracking-wider text-foreground truncate uppercase">
-                      {match.quiz?.title || "ARENA BATTLE"}
+                      {test.testTitle}
                     </span>
+                    <span className="font-mono text-[9px] px-2 py-0.5 border border-panel-border/30 text-muted-foreground uppercase">
+                      {test.topicName}
+                    </span>
+                    {test.isAutoSubmitted && (
+                      <span className="font-mono text-[9px] px-2 py-0.5 bg-neon-pink/10 border border-neon-pink/20 text-neon-pink uppercase">
+                        AUTO
+                      </span>
+                    )}
                   </div>
                   <span className="font-mono text-[10px] text-muted-foreground uppercase">
-                    Score: {match.score} // {new Date(match.completedAt).toLocaleDateString()}
+                    Score: {test.score}/{test.maxPossible} ({test.percentage.toFixed(0)}%) // {test.submittedAt ? new Date(test.submittedAt).toLocaleDateString() : 'N/A'}
                   </span>
                 </div>
+                <span className={`font-mono text-sm font-bold ${
+                  test.percentage >= 70 ? 'text-neon-cyan' : test.percentage >= 40 ? 'text-neon-yellow' : 'text-neon-pink'
+                }`}>
+                  {test.percentage.toFixed(0)}%
+                </span>
                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
               </Link>
             ))}
-            {data.recentAttempts.length === 0 && (
+            {data.completedTests.length === 0 && (
               <div className="py-10 text-center border border-dashed border-panel-border text-muted-foreground font-mono text-xs uppercase">
                 NO BATTLE LOGS FOUND. ENTER THE ARENA TO START.
               </div>
@@ -237,7 +416,7 @@ function StatCard({
   label: string
   value: string
   icon: React.ElementType
-  color: "cyan" | "pink" | "amber"
+  color: "cyan" | "pink" | "yellow"
   sub: string
 }) {
   const colorClasses = {

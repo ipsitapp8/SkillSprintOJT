@@ -20,6 +20,7 @@ func init() {
 type SessionPayload struct {
 	ID    string `json:"id"`
 	Email string `json:"email"`
+	Role  string `json:"role"`
 	jwt.RegisteredClaims
 }
 
@@ -61,6 +62,7 @@ func JWTMiddleware() gin.HandlerFunc {
 
 		c.Set("userID", claims.ID)
 		c.Set("userEmail", claims.Email)
+		c.Set("userRole", claims.Role)
 		c.Next()
 	}
 }

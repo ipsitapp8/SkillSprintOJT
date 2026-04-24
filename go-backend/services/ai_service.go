@@ -136,12 +136,14 @@ Respond ONLY with JSON.`, question, correctAnswer, userAnswer, maxScore)
 
 // GeneratedQuestion is the struct returned by GenerateQuestions.
 type GeneratedQuestion struct {
-	Type        string   `json:"type"`
-	Prompt      string   `json:"prompt"`
-	Options     []string `json:"options"`
-	Answer      string   `json:"answer"`
-	Explanation string   `json:"explanation"`
-	Difficulty  string   `json:"difficulty"`
+	Type          string   `json:"type"`              // mcq, debug_code, fix_code, logic_explanation
+	Prompt        string   `json:"prompt"`
+	Options       []string `json:"options,omitempty"` // for mcq
+	Answer        string   `json:"answer,omitempty"`  // from training
+	CorrectAnswer string   `json:"correctAnswer,omitempty"`
+	Explanation   string   `json:"explanation"`
+	MaxScore      int      `json:"maxScore,omitempty"`
+	Difficulty    string   `json:"difficulty,omitempty"`
 }
 
 // GenerateQuestions calls the Gemini 1.5 Flash API to produce MCQ questions.

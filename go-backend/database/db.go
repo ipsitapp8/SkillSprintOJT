@@ -20,6 +20,7 @@ func ConnectDB() {
 	}
 
 	err = database.AutoMigrate(
+		// Existing models
 		&models.User{},
 		&models.QuizCategory{},
 		&models.Arena{},
@@ -28,6 +29,17 @@ func ConnectDB() {
 		&models.Option{},
 		&models.Attempt{},
 		&models.AttemptAnswer{},
+		// Test module models
+		&models.Topic{},
+		&models.Test{},
+		&models.TestQuestion{},
+		&models.TestMCQOption{},
+		&models.TestCodingDetail{},
+		&models.TestCase{},
+		&models.TestAttempt{},
+		&models.TestSubmission{},
+		&models.TestResult{},
+
 		// Training module models
 		&models.TrainingQuestion{},
 		&models.TrainingSession{},
