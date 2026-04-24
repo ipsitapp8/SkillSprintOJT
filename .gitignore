@@ -20,9 +20,10 @@ node_modules/
 *.db-wal
 
 # Backend binaries
+*.exe
 go-backend/server
 go-backend/backend
-go-backend/backend.exe
 
-# Logs
+# Logs and tests
 *.log
+test_notes.txt

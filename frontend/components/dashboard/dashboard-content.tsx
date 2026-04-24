@@ -26,7 +26,6 @@ import { PerformanceChart } from "./performance-chart"
 
 interface DashboardData {
   stats: {
- main
     totalAttempts: number
     highScore: number
     avgScore: number
@@ -75,21 +74,8 @@ const tierConfig: Record<string, { icon: React.ElementType; color: string; glowC
   WARRIOR: { icon: Shield, color: "text-muted-foreground", glowClass: "" },
   ROOKIE: { icon: Target, color: "text-muted-foreground", glowClass: "" },
   UNRANKED: { icon: Target, color: "text-muted-foreground", glowClass: "" },
-
-    totalAttempts: number;
-    highScore: number;
-    avgScore: number;
-  };
-  recentAttempts: Array<{
-    id: string;
-    score: number;
-    totalQuestions: number;
-    completedAt: string;
-    quiz: { title: string };
-  }>;
-  email?: string;
- main
 }
+
 
 export function DashboardContent() {
   const [data, setData] = useState<DashboardData | null>(null)

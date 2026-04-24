@@ -39,7 +39,7 @@ export function SessionSetupPanel({ topic, mode, onClose, onStart }: SessionSetu
 
       if (res.ok) {
         const data = await res.json()
-        onStart(data.quizId)
+        onStart(data.sessionId || data.session_id)
       } else {
         const errData = await res.json().catch(() => ({}))
         setError(errData.error || "Neural synthesis interrupted")
