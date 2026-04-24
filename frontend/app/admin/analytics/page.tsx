@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react"
 import { BarChart3, FileText, FolderOpen, Shield, Users } from "lucide-react"
+import { API_BASE } from "@/lib/api-config"
 
-const API = "http://localhost:8080"
+const API = API_BASE
 
 interface AdminStats {
   totalTests: number

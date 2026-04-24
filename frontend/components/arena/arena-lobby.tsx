@@ -15,6 +15,7 @@ import {
   Users,
   Zap,
 } from "lucide-react"
+import { API_BASE } from "@/lib/api-config"
 
 interface Arena {
   id: string;
@@ -51,7 +52,7 @@ export function ArenaLobby() {
   useEffect(() => {
     async function fetchArenas() {
       try {
-        const res = await fetch("http://localhost:8080/api/arenas")
+        const res = await fetch(`${API_BASE}/api/arenas`)
         if (res.ok) {
           const data = await res.json()
           setArenas(data)

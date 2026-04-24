@@ -12,6 +12,7 @@ import {
   Target,
   Trophy,
 } from "lucide-react"
+import { API_BASE } from "@/lib/api-config"
 
 interface LeaderboardEntry {
   rank: number
@@ -45,7 +46,7 @@ export function LeaderboardContent() {
   useEffect(() => {
     async function fetchLeaderboard() {
       try {
-        const res = await fetch("http://localhost:8080/api/leaderboard/global")
+        const res = await fetch(`${API_BASE}/api/leaderboard/global`)
         if (res.ok) {
           const json = await res.json()
           setData(json)

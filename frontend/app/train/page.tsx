@@ -22,6 +22,7 @@ import {
 import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { getTrainingHistory, recommendDifficulty } from "@/lib/training-history"
+import { API_BASE } from "@/lib/api-config"
 
 const topTopics = [
   {
@@ -137,7 +138,6 @@ export default function TrainPage() {
     setAiError(null);
     setAiLoading(true);
 
-    const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080";
     const url = `${API_BASE}/api/training/generate`;
 
     const payload = { 
@@ -197,7 +197,7 @@ export default function TrainPage() {
       console.error("[AI_GEN] Fetch Exception:", err?.message);
       // DISTINGUISH: Network Error vs App Error
       if (err?.message?.includes("fetch") || err?.message?.includes("NetworkError")) {
-        setAiError("CONNECTIVITY FAILURE: BACKEND UNREACHABLE. CHECK SERVER STATUS.");
+        setAiError("CONNECTIVITY FAILURE: BACKEND UNREACHABLE.");
       } else {
         setAiError(err?.message || "AI SERVICES OFFLINE.");
       }

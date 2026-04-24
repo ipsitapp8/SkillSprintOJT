@@ -1,6 +1,7 @@
 import { FileUp, FileText, Zap, Activity, AlertCircle } from "lucide-react"
 import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
+import { API_BASE } from "@/lib/api-config"
 
 export function NotesUpload() {
   const router = useRouter()
@@ -36,7 +37,6 @@ export function NotesUpload() {
     formData.append("difficulty", difficulty)
     formData.append("count", count.toString())
 
-    const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080"
     const UPLOAD_URL = `${API_BASE}/api/train/upload-notes`
 
     console.log("[NOTES_UPLOAD] Init Sync Request:")
@@ -79,7 +79,7 @@ export function NotesUpload() {
       
       // Distinguish between network errors (TypeError) and response errors
       if (err instanceof TypeError && err.message === "Failed to fetch") {
-        setError("Backend unreachable. Check upload-notes route and server.")
+        setError("Backend unreachable. Please check your network and server status.")
       } else {
         setError(err.message || "SYNC_FAILURE: UNKNOWN_ERROR")
       }

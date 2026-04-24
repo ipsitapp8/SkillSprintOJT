@@ -14,8 +14,9 @@ import {
   Target,
   Zap,
 } from "lucide-react"
+import { API_BASE } from "@/lib/api-config"
 
-const API = "http://localhost:8080"
+const API = API_BASE
 
 interface Topic {
   id: string
