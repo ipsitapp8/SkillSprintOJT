@@ -3,14 +3,42 @@ package services
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 )
+
+// ErrGeminiRateLimit is returned when Gemini responds with 429 RESOURCE_EXHAUSTED.
+var ErrGeminiRateLimit = errors.New("Gemini free-tier quota exceeded. Please wait and try again.")
+
+// isGeminiRateLimited checks if a Gemini response indicates rate limiting.
+func isGeminiRateLimited(statusCode int, body []byte) bool {
+	if statusCode == http.StatusTooManyRequests {
+		return true
+	}
+	// Gemini may also return 429 info inside a non-429 status body.
+	var apiErr geminiAPIError
+	if err := json.Unmarshal(body, &apiErr); err == nil {
+		if strings.Contains(strings.ToUpper(apiErr.Error.Status), "RESOURCE_EXHAUSTED") {
+			return true
+		}
+	}
+	return false
+}
+
+type geminiAPIError struct {
+	Error struct {
+		Code    int    `json:"code"`
+		Message string `json:"message"`
+		Status  string `json:"status"`
+	} `json:"error"`
+}
 
 // AIResponse is used by the answer evaluation endpoint.
 type AIResponse struct {
@@ -217,7 +245,16 @@ Rules:
 	}
 	defer resp.Body.Close()
 
+	respBody, readErr := io.ReadAll(resp.Body)
+	if readErr != nil {
+		return nil, fmt.Errorf("failed to read gemini response: %w", readErr)
+	}
+
 	if resp.StatusCode != http.StatusOK {
+		if isGeminiRateLimited(resp.StatusCode, respBody) {
+			log.Printf("[GEMINI_RATE_LIMIT] 429 on GenerateQuestions topic=%s", topic)
+			return nil, ErrGeminiRateLimit
+		}
 		log.Printf("[AI] ERROR: Gemini API returned status %d. URL used: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent", resp.StatusCode)
 		return nil, fmt.Errorf("gemini API error: status %d", resp.StatusCode)
 	}
@@ -234,7 +271,7 @@ Rules:
 	}
 
 	var geminiResp GeminiResponse
-	if err := json.NewDecoder(resp.Body).Decode(&geminiResp); err != nil {
+	if err := json.Unmarshal(respBody, &geminiResp); err != nil {
 		log.Printf("[AI] ERROR: Failed to decode response body: %v", err)
 		return nil, fmt.Errorf("gemini decode error: %w", err)
 	}
@@ -279,14 +316,24 @@ func SummarizeNotes(text string) (string, error) {
 		return "", fmt.Errorf("GEMINI_API_KEY not found")
 	}
 
-	prompt := fmt.Sprintf(`Summarize the following technical notes. Focus on key concepts, definitions, and architectural details. 
-Keep it concise but detailed enough to generate technical quiz questions later.
-Notes Content:
-%s`, text)
+	inputLen := len(text)
+	log.Printf("[GEMINI_SUMMARY] input_text_len=%d", inputLen)
+	if len(text) > 8000 {
+		text = text[:8000]
+	}
+	log.Printf("[GEMINI_SUMMARY] truncated_text_len=%d", len(text))
 
-	type Part struct{ Text string `json:"text"` }
-	type Content struct{ Parts []Part `json:"parts"` }
-	type RequestBody struct{ Contents []Content `json:"contents"` }
+	prompt := fmt.Sprintf("Summarize the following notes into concise bullet points covering only the key concepts.\n\nNOTES:\n%s", text)
+
+	type Part struct {
+		Text string `json:"text"`
+	}
+	type Content struct {
+		Parts []Part `json:"parts"`
+	}
+	type RequestBody struct {
+		Contents []Content `json:"contents"`
+	}
 
 	reqBody := RequestBody{Contents: []Content{{Parts: []Part{{Text: prompt}}}}}
 	jsonData, _ := json.Marshal(reqBody)
@@ -299,14 +346,33 @@ Notes Content:
 	}
 	defer resp.Body.Close()
 
-	body, _ := io.ReadAll(resp.Body)
+	responseBody, readErr := io.ReadAll(resp.Body)
+	if readErr != nil {
+		return "", fmt.Errorf("failed to read Gemini summary response: %w", readErr)
+	}
 
 	if resp.StatusCode != http.StatusOK {
-		log.Printf("[AI] Gemini Summary Error: %d | Body: %s", resp.StatusCode, string(body))
+		if isGeminiRateLimited(resp.StatusCode, responseBody) {
+			log.Printf("[GEMINI_RATE_LIMIT] 429 on SummarizeNotes")
+			return "", ErrGeminiRateLimit
+		}
+		log.Printf("[AI] Gemini Summary Error: %d | Body: %s", resp.StatusCode, string(responseBody))
+		var apiErr geminiAPIError
+		if err := json.Unmarshal(responseBody, &apiErr); err == nil {
+			parts := []string{fmt.Sprintf("gemini API error: %d", resp.StatusCode)}
+			if strings.TrimSpace(apiErr.Error.Status) != "" {
+				parts = append(parts, apiErr.Error.Status)
+			}
+			if strings.TrimSpace(apiErr.Error.Message) != "" {
+				parts = append(parts, apiErr.Error.Message)
+			}
+			return "", errors.New(strings.Join(parts, " - "))
+		}
 		return "", fmt.Errorf("gemini API error: %d", resp.StatusCode)
 	}
 
-	log.Printf("[AI] Gemini Summary Raw Body: %.200s", string(body))
+	log.Printf("[GEMINI_SUMMARY_PREVIEW] %.300s", string(responseBody))
+	log.Println("[GEMINI_SUMMARY_RAW]", string(responseBody))
 
 	var result struct {
 		Candidates []struct {
@@ -318,47 +384,107 @@ Notes Content:
 		} `json:"candidates"`
 	}
 
-	if err := json.Unmarshal(body, &result); err != nil {
-		return "", err
+	if err := json.Unmarshal(responseBody, &result); err != nil {
+		return "", fmt.Errorf("failed to parse Gemini summary response: %w", err)
 	}
 
-
-	if len(result.Candidates) == 0 || len(result.Candidates[0].Content.Parts) == 0 {
-		return "", fmt.Errorf("empty response from gemini")
+	if len(result.Candidates) == 0 {
+		return "", fmt.Errorf("no candidates returned from Gemini")
 	}
 
-	return result.Candidates[0].Content.Parts[0].Text, nil
+	if len(result.Candidates[0].Content.Parts) == 0 {
+		return "", fmt.Errorf("no content parts returned from Gemini")
+	}
+
+	summaryText := strings.TrimSpace(result.Candidates[0].Content.Parts[0].Text)
+	if summaryText == "" {
+		return "", fmt.Errorf("empty summary returned from Gemini")
+	}
+	log.Printf("[GEMINI_SUMMARY] summary_len=%d", len(summaryText))
+
+	return summaryText, nil
 }
 
 // GenerateQuestionsFromNotes derives MCQ questions from a technical summary.
 func GenerateQuestionsFromNotes(summary string, count int, difficulty string) ([]GeneratedQuestion, error) {
+	return GenerateQuestionsFromNotesWithMinMatches(summary, count, difficulty, 0)
+}
+
+// GenerateQuestionsFromNotesWithMinMatches derives MCQ questions from a technical summary.
+// minKeywordMatches=0 enables adaptive grounding strictness.
+func GenerateQuestionsFromNotesWithMinMatches(summary string, count int, difficulty string, minKeywordMatches int) ([]GeneratedQuestion, error) {
 	apiKey := os.Getenv("GEMINI_API_KEY")
 	if apiKey == "" {
 		return nil, fmt.Errorf("GEMINI_API_KEY not found")
 	}
 
-	prompt := fmt.Sprintf(`Based on the technical summary below, generate EXACTLY %d MCQ questions. 
-Difficulty: %s
+	prompt := fmt.Sprintf(`You are an expert technical interviewer AI.
 
-Summary Context:
-%s
+You are given a SUMMARY extracted from a user's personal notes.
 
-Return ONLY a JSON array of objects:
+Your task is to generate EXACTLY %d high-quality MCQ (multiple choice) questions STRICTLY based on the provided summary.
+
+CRITICAL RULES (MUST FOLLOW):
+
+1. GROUNDING (VERY IMPORTANT)
+- Every question MUST be directly based on concepts present in the summary.
+- DO NOT use external knowledge unless it is clearly implied in the summary.
+- DO NOT generate generic textbook questions.
+- If a concept is not in the summary, DO NOT use it.
+
+2. DIVERSITY
+- Cover DIFFERENT concepts from the summary.
+- Do NOT repeat the same idea in multiple questions.
+- Maximum ONE question per concept.
+
+3. QUESTION QUALITY
+- Questions must test understanding, not just definitions.
+- Include logic-based, scenario-based, or application-based questions where possible.
+- Avoid trivial or overly obvious questions.
+
+4. OPTIONS
+- Each question must have EXACTLY 4 options.
+- Only ONE correct answer.
+- Options should be realistic and not obviously wrong.
+
+5. EXPLANATION
+- Each question MUST include an explanation.
+- Explanation must reference the concept from the summary.
+- Keep explanation clear and useful for learning.
+
+6. FORMAT (STRICT JSON ONLY)
+Return ONLY a JSON array. No markdown. No text.
+
+Each object must follow EXACT structure:
+
 [
   {
-    "type": "mcq",
-    "prompt": "Question text...",
+    "prompt": "question text",
     "options": ["A", "B", "C", "D"],
-    "answer": "Correct option text",
-    "explanation": "Reasoning...",
+    "answer": "correct option text",
+    "explanation": "clear explanation based on summary",
     "difficulty": "%s"
   }
 ]
-Do not use markdown code fences.`, count, difficulty, summary, difficulty)
 
-	type Part struct{ Text string `json:"text"` }
-	type Content struct{ Parts []Part `json:"parts"` }
-	type RequestBody struct{ Contents []Content `json:"contents"` }
+7. FAILURE CONDITION
+- If the summary is too short or unclear, still generate the BEST possible grounded questions.
+- DO NOT return fewer than %d questions.
+
+---
+
+SUMMARY:
+%s`, count, difficulty, count, summary)
+
+	type Part struct {
+		Text string `json:"text"`
+	}
+	type Content struct {
+		Parts []Part `json:"parts"`
+	}
+	type RequestBody struct {
+		Contents []Content `json:"contents"`
+	}
 
 	reqBody := RequestBody{Contents: []Content{{Parts: []Part{{Text: prompt}}}}}
 	jsonData, _ := json.Marshal(reqBody)
@@ -371,6 +497,19 @@ Do not use markdown code fences.`, count, difficulty, summary, difficulty)
 	}
 	defer resp.Body.Close()
 
+	rawBody, readErr := io.ReadAll(resp.Body)
+	if readErr != nil {
+		return nil, fmt.Errorf("failed to read AI response body: %w", readErr)
+	}
+	if resp.StatusCode != http.StatusOK {
+		if isGeminiRateLimited(resp.StatusCode, rawBody) {
+			log.Printf("[GEMINI_RATE_LIMIT] 429 on GenerateQuestionsFromNotes")
+			return nil, ErrGeminiRateLimit
+		}
+		log.Printf("[NOTES][generate] Gemini notes generation status=%d preview=%.200s", resp.StatusCode, string(rawBody))
+		return nil, fmt.Errorf("gemini API error: status %d", resp.StatusCode)
+	}
+
 	var result struct {
 		Candidates []struct {
 			Content struct {
@@ -381,23 +520,123 @@ Do not use markdown code fences.`, count, difficulty, summary, difficulty)
 		} `json:"candidates"`
 	}
 
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, err
+	if err := json.Unmarshal(rawBody, &result); err != nil {
+		log.Printf("[NOTES][generate] malformed gemini envelope preview=%.200s", string(rawBody))
+		return nil, fmt.Errorf("failed to parse AI-generated notes questions")
 	}
 
 	if len(result.Candidates) == 0 || len(result.Candidates[0].Content.Parts) == 0 {
+		log.Printf("[NOTES][generate] empty gemini candidates preview=%.200s", string(rawBody))
 		return nil, fmt.Errorf("empty response from gemini")
 	}
 
 	rawText := result.Candidates[0].Content.Parts[0].Text
+	if strings.TrimSpace(rawText) == "" {
+		log.Printf("[NOTES][generate] empty candidate text preview=%.200s", string(rawBody))
+		return nil, fmt.Errorf("empty response from gemini")
+	}
 	cleaned := cleanGeminiResponse(rawText)
 
-	var questions []GeneratedQuestion
-	if err := json.Unmarshal([]byte(cleaned), &questions); err != nil {
-		return nil, fmt.Errorf("failed to parse AI questions: %w", err)
+	var rawQuestions []GeneratedQuestion
+	if err := json.Unmarshal([]byte(cleaned), &rawQuestions); err != nil {
+		log.Printf("[NOTES][generate] failed parsing questions cleaned_preview=%.200s", cleaned)
+		return nil, fmt.Errorf("failed to parse AI-generated notes questions")
 	}
 
-	return questions, nil
+	summaryKeywords := buildSummaryKeywordSet(summary)
+	requiredMatches := minKeywordMatches
+	if requiredMatches <= 0 {
+		requiredMatches = adaptiveMinKeywordMatches(summaryKeywords)
+	}
+	valid := make([]GeneratedQuestion, 0, len(rawQuestions))
+	for _, q := range rawQuestions {
+		if strings.TrimSpace(q.Prompt) == "" ||
+			len(q.Options) < 4 ||
+			strings.TrimSpace(q.Answer) == "" ||
+			strings.TrimSpace(q.Explanation) == "" {
+			continue
+		}
+		if !isGroundedInSummary(q.Prompt, q.Explanation, summaryKeywords, requiredMatches) {
+			continue
+		}
+		if strings.TrimSpace(q.Difficulty) == "" {
+			q.Difficulty = difficulty
+		}
+		valid = append(valid, q)
+	}
+
+	if len(valid) == 0 {
+		log.Printf("[NOTES][generate] validation produced zero questions raw_count=%d", len(rawQuestions))
+		return nil, fmt.Errorf("no valid questions generated from notes")
+	}
+
+	return valid, nil
+}
+
+func buildSummaryKeywordSet(summary string) map[string]struct{} {
+	re := regexp.MustCompile(`[a-zA-Z]{4,}`)
+	words := re.FindAllString(strings.ToLower(summary), -1)
+	keywords := make(map[string]struct{}, len(words))
+	stop := map[string]struct{}{
+		"that": {}, "with": {}, "from": {}, "this": {}, "these": {}, "those": {},
+		"have": {}, "will": {}, "into": {}, "about": {}, "such": {}, "their": {},
+		"there": {}, "which": {}, "where": {}, "when": {}, "while": {}, "using": {},
+		"used": {}, "also": {}, "only": {}, "below": {}, "based": {}, "content": {},
+		"summary": {}, "concept": {}, "concepts": {}, "technical": {}, "should": {},
+	}
+	for _, w := range words {
+		if _, blocked := stop[w]; blocked {
+			continue
+		}
+		keywords[w] = struct{}{}
+	}
+	return keywords
+}
+
+func adaptiveMinKeywordMatches(summaryKeywords map[string]struct{}) int {
+	// Lighter default acceptance, stricter only when summary is rich.
+	if len(summaryKeywords) >= 60 {
+		return 2
+	}
+	return 1
+}
+
+func isGroundedInSummary(prompt, explanation string, summaryKeywords map[string]struct{}, requiredMatches int) bool {
+	if requiredMatches < 1 {
+		requiredMatches = 1
+	}
+	re := regexp.MustCompile(`[a-zA-Z]{4,}`)
+	text := strings.ToLower(prompt + " " + explanation)
+	words := re.FindAllString(text, -1)
+	if len(words) == 0 {
+		return false
+	}
+
+	// Keep a simple guard against unrelated generic filler.
+	genericPhrases := []string{
+		"in general", "best practice", "typically", "commonly", "always", "never",
+	}
+	hasGenericSignal := false
+	for _, phrase := range genericPhrases {
+		if strings.Contains(text, phrase) {
+			hasGenericSignal = true
+			break
+		}
+	}
+
+	matches := 0
+	for _, w := range words {
+		if _, ok := summaryKeywords[w]; ok {
+			matches++
+			if matches >= requiredMatches {
+				return true
+			}
+		}
+	}
+	if hasGenericSignal {
+		return false
+	}
+	return false
 }
 
 // cleanGeminiResponse strips markdown fences and extracts the JSON array.
@@ -416,3 +655,126 @@ func cleanGeminiResponse(raw string) string {
 	return raw
 }
 
+// ---------- Batched Generation Wrappers ----------
+
+const batchSize = 5
+
+// GenerateQuestionsBatched splits a large question request into batches of 5.
+// It accumulates exclude prompts across batches to avoid duplicates.
+// If a batch fails, it retries once. Rate-limit errors stop further batches
+// but preserve already-collected questions.
+func GenerateQuestionsBatched(topic, difficulty string, count int, excludePrompts []string) ([]GeneratedQuestion, error) {
+	if count <= batchSize {
+		return GenerateQuestions(topic, difficulty, count, excludePrompts)
+	}
+
+	log.Printf("[AI_BATCH] total_requested=%d batch_size=%d", count, batchSize)
+
+	var allQuestions []GeneratedQuestion
+	// Accumulate exclude prompts so subsequent batches avoid earlier questions
+	excludeAcc := make([]string, len(excludePrompts))
+	copy(excludeAcc, excludePrompts)
+
+	remaining := count
+	batchNum := 0
+	for remaining > 0 {
+		batchNum++
+		batchCount := batchSize
+		if remaining < batchSize {
+			batchCount = remaining
+		}
+
+		questions, err := GenerateQuestions(topic, difficulty, batchCount, excludeAcc)
+		if err != nil {
+			log.Printf("[AI_BATCH] batch_%d FAILED: %v", batchNum, err)
+
+			// If rate-limited, stop immediately but keep what we have
+			if errors.Is(err, ErrGeminiRateLimit) {
+				log.Printf("[AI_BATCH] rate-limited at batch_%d, returning %d questions collected so far", batchNum, len(allQuestions))
+				if len(allQuestions) == 0 {
+					return nil, ErrGeminiRateLimit
+				}
+				return allQuestions, nil
+			}
+
+			// Retry this batch once
+			log.Printf("[AI_BATCH] retrying batch_%d", batchNum)
+			questions, err = GenerateQuestions(topic, difficulty, batchCount, excludeAcc)
+			if err != nil {
+				log.Printf("[AI_BATCH] batch_%d retry FAILED: %v", batchNum, err)
+				if errors.Is(err, ErrGeminiRateLimit) && len(allQuestions) > 0 {
+					return allQuestions, nil
+				}
+				// Skip this batch, continue with remaining
+				remaining -= batchCount
+				continue
+			}
+		}
+
+		// Add prompts to exclude for next batches
+		for _, q := range questions {
+			excludeAcc = append(excludeAcc, q.Prompt)
+		}
+
+		allQuestions = append(allQuestions, questions...)
+		log.Printf("[AI_BATCH] batch_%d_requested=%d returned=%d", batchNum, batchCount, len(questions))
+		remaining -= batchCount
+	}
+
+	log.Printf("[AI_BATCH] final_valid=%d", len(allQuestions))
+	return allQuestions, nil
+}
+
+// GenerateQuestionsFromNotesBatched splits notes-based generation into batches of 5.
+// Same retry and rate-limit semantics as GenerateQuestionsBatched.
+func GenerateQuestionsFromNotesBatched(summary string, count int, difficulty string) ([]GeneratedQuestion, error) {
+	if count <= batchSize {
+		return GenerateQuestionsFromNotes(summary, count, difficulty)
+	}
+
+	log.Printf("[AI_BATCH] notes total_requested=%d batch_size=%d", count, batchSize)
+
+	var allQuestions []GeneratedQuestion
+	remaining := count
+	batchNum := 0
+
+	for remaining > 0 {
+		batchNum++
+		batchCount := batchSize
+		if remaining < batchSize {
+			batchCount = remaining
+		}
+
+		questions, err := GenerateQuestionsFromNotes(summary, batchCount, difficulty)
+		if err != nil {
+			log.Printf("[AI_BATCH] notes batch_%d FAILED: %v", batchNum, err)
+
+			if errors.Is(err, ErrGeminiRateLimit) {
+				log.Printf("[AI_BATCH] notes rate-limited at batch_%d, returning %d questions collected so far", batchNum, len(allQuestions))
+				if len(allQuestions) == 0 {
+					return nil, ErrGeminiRateLimit
+				}
+				return allQuestions, nil
+			}
+
+			// Retry once
+			log.Printf("[AI_BATCH] notes retrying batch_%d", batchNum)
+			questions, err = GenerateQuestionsFromNotes(summary, batchCount, difficulty)
+			if err != nil {
+				log.Printf("[AI_BATCH] notes batch_%d retry FAILED: %v", batchNum, err)
+				if errors.Is(err, ErrGeminiRateLimit) && len(allQuestions) > 0 {
+					return allQuestions, nil
+				}
+				remaining -= batchCount
+				continue
+			}
+		}
+
+		allQuestions = append(allQuestions, questions...)
+		log.Printf("[AI_BATCH] notes batch_%d_requested=%d returned=%d", batchNum, batchCount, len(questions))
+		remaining -= batchCount
+	}
+
+	log.Printf("[AI_BATCH] notes final_valid=%d", len(allQuestions))
+	return allQuestions, nil
+}

@@ -4,25 +4,65 @@ import (
 	"backend/database"
 	"backend/models"
 	"backend/services"
+	"bytes"
+	"crypto/sha256"
 	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
+	"github.com/dslipak/pdf"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/dslipak/pdf"
-	"io"
-	"bytes"
 )
+
+// notesCacheEntry stores a previous Gemini result for identical file content.
+type notesCacheEntry struct {
+	Summary   string
+	Questions []services.GeneratedQuestion
+}
+
+// notesCache is an in-memory cache keyed by SHA-256 of extracted text.
+var notesCache sync.Map
+
+type notesCandidate struct {
+	Question services.GeneratedQuestion
+	Source   string
+	DBID     uint
+}
 
 // UploadNotes handles the multipart file ingestion, extraction, and AI orchestration.
 func UploadNotes(c *gin.Context) {
+	log.Printf("[NOTES] upload received method=%s path=%s", c.Request.Method, c.Request.URL.Path)
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("[NOTES][panic] [NOTES_PANIC] %v", r)
+			if !c.Writer.Written() {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"error": "Internal server error during notes processing",
+					"stage": "panic",
+				})
+			}
+		}
+	}()
+
+	fail := func(status int, stage, message, logMessage string) {
+		log.Printf("[NOTES][%s] %s", stage, logMessage)
+		c.JSON(status, gin.H{
+			"error": message,
+			"stage": stage,
+		})
+	}
+
 	file, header, err := c.Request.FormFile("file")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "File transfer failed"})
+		fail(http.StatusBadRequest, "extract", "File transfer failed: no file found in request", "missing file in multipart request")
 		return
 	}
 	defer file.Close()
@@ -35,23 +75,30 @@ func UploadNotes(c *gin.Context) {
 		count = 5
 	}
 
-	ext := strings.ToLower(header.Filename[strings.LastIndex(header.Filename, "."):])
+	log.Printf("[NOTES] request details file=%s type=%s size=%d topic=%s difficulty=%s",
+		header.Filename, header.Header.Get("Content-Type"), header.Size, topic, difficulty)
+
+	dotIdx := strings.LastIndex(header.Filename, ".")
+	if dotIdx < 0 {
+		fail(http.StatusBadRequest, "extract", "Unsupported file format. Use .txt or .pdf", "unsupported file type: no extension")
+		return
+	}
+	ext := strings.ToLower(header.Filename[dotIdx:])
 	var extractedText string
 
-	log.Printf("[NOTES_INGEST] Processing file=%s ext=%s", header.Filename, ext)
+	log.Printf("[NOTES] file type detected ext=%s", ext)
 
 	if ext == ".txt" {
 		data, err := io.ReadAll(file)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read TXT file"})
+			fail(http.StatusInternalServerError, "extract", "Failed to read TXT file", "txt read failed")
 			return
 		}
 		extractedText = string(data)
 	} else if ext == ".pdf" {
 		content, err := pdf.NewReader(file, header.Size)
 		if err != nil {
-			log.Printf("[NOTES_INGEST] PDF Error: %v", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to initialize PDF reader"})
+			fail(http.StatusInternalServerError, "extract", "Failed to initialize PDF reader", "pdf reader init failed")
 			return
 		}
 
@@ -67,17 +114,30 @@ func UploadNotes(c *gin.Context) {
 		}
 		extractedText = buf.String()
 	} else {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Unsupported file format. Use .txt or .pdf"})
+		fail(http.StatusBadRequest, "extract", "Unsupported file format. Use .txt or .pdf", "unsupported extension")
 		return
 	}
 
 	extractedText = strings.TrimSpace(extractedText)
 	textLen := len(extractedText)
-	log.Printf("[NOTES_INGEST] Extraction complete. Length: %d chars", textLen)
+	log.Printf("[NOTES] extracted chars count=%d", textLen)
 
 	if textLen < 50 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Extracted text is too short for meaningful analysis."})
+		fail(http.StatusBadRequest, "extract", "Could not extract enough text from file", "extracted text too short")
 		return
+	}
+
+	// --------------- Notes cache check ---------------
+	cacheKey := fmt.Sprintf("%x", sha256.Sum256([]byte(extractedText)))
+	var cachedSummary string
+	var cachedQuestions []services.GeneratedQuestion
+	var usedCache bool
+	if cached, ok := notesCache.Load(cacheKey); ok {
+		entry := cached.(notesCacheEntry)
+		log.Printf("[NOTES_CACHE_HIT] key=%s summary_len=%d questions=%d", cacheKey[:12], len(entry.Summary), len(entry.Questions))
+		cachedSummary = entry.Summary
+		cachedQuestions = entry.Questions
+		usedCache = true
 	}
 
 	// Create Upload record
@@ -87,44 +147,259 @@ func UploadNotes(c *gin.Context) {
 		Status:        "processing",
 		ExtractedText: extractedText,
 	}
-	database.DB.Create(&upload)
-
-	// 1. Summarize
-	summary, err := services.SummarizeNotes(extractedText)
-	if err != nil {
-		log.Printf("[NOTES_INGEST] Summarization failed: %v", err)
-		database.DB.Model(&upload).Update("status", "failed")
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "AI failed to summarize notes"})
-		return
-	}
-	database.DB.Model(&upload).Update("summary", summary)
-
-	// 2. Generate questions
-	aiQuestions, err := services.GenerateQuestionsFromNotes(summary, count, difficulty)
-	if err != nil {
-		log.Printf("[NOTES_INGEST] Generation failed: %v", err)
-		database.DB.Model(&upload).Update("status", "failed")
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "AI failed to generate questions from notes"})
+	if err := database.DB.Create(&upload).Error; err != nil {
+		fail(http.StatusInternalServerError, "save", "Failed to save upload record", "failed creating upload record")
 		return
 	}
 
-	// 3. Persist questions & Create Session
+	var summary string
+	var aiQuestionsRaw []services.GeneratedQuestion
+
+	if usedCache {
+		summary = cachedSummary
+		aiQuestionsRaw = cachedQuestions
+		log.Printf("[NOTES] using cached summary+questions, skipping Gemini calls")
+	} else {
+		log.Printf("[NOTES] summarization started raw_length=%d", textLen)
+		// Keep prompt size safe for model input and avoid giant payload failures.
+		const maxSummarizeChars = 40000
+		if len(extractedText) > maxSummarizeChars {
+			extractedText = extractedText[:maxSummarizeChars]
+		}
+
+		// 1. Summarize
+		var sumErr error
+		summary, sumErr = services.SummarizeNotes(extractedText)
+		if sumErr != nil {
+			log.Printf("[NOTES][summarize] summarization failed filename=%s extracted_len=%d error=%v", header.Filename, textLen, sumErr)
+			database.DB.Model(&upload).Update("status", "failed")
+			if errors.Is(sumErr, services.ErrGeminiRateLimit) {
+				log.Printf("[GEMINI_RATE_LIMIT] notes summarize blocked")
+				c.JSON(http.StatusTooManyRequests, gin.H{
+					"error": "Gemini free-tier quota exceeded. Please wait a few seconds and try again.",
+					"stage": "gemini_rate_limit",
+				})
+				return
+			}
+			msg := strings.TrimSpace(sumErr.Error())
+			if msg == "" {
+				msg = "Failed to summarize uploaded notes"
+			}
+			fail(http.StatusInternalServerError, "summarize", msg, "gemini summarization failed")
+			return
+		}
+		log.Printf("[NOTES] summarization success summary_chars=%d", len(strings.TrimSpace(summary)))
+		database.DB.Model(&upload).Update("summary", summary)
+
+		log.Printf("[NOTES] question generation started target_count=%d", count)
+		// 2. Generate notes-based questions (single pass, no retry)
+		var genErr error
+		aiQuestionsRaw, genErr = services.GenerateQuestionsFromNotesBatched(summary, count, difficulty)
+		if genErr != nil {
+			log.Printf("[NOTES][generate] generation failed filename=%s extracted_len=%d summary_len=%d error=%v", header.Filename, textLen, len(strings.TrimSpace(summary)), genErr)
+			database.DB.Model(&upload).Update("status", "failed")
+			if errors.Is(genErr, services.ErrGeminiRateLimit) {
+				log.Printf("[GEMINI_RATE_LIMIT] notes generate blocked")
+				c.JSON(http.StatusTooManyRequests, gin.H{
+					"error": "Gemini free-tier quota exceeded. Please wait a few seconds and try again.",
+					"stage": "gemini_rate_limit",
+				})
+				return
+			}
+			errText := strings.ToLower(genErr.Error())
+			message := "AI failed to generate questions from notes"
+			if strings.Contains(errText, "parse ai-generated") {
+				message = "Failed to parse AI-generated notes questions"
+			}
+			if strings.Contains(errText, "no valid questions generated") {
+				message = "No valid questions generated from notes"
+			}
+			fail(http.StatusInternalServerError, "generate", message, "notes generation service returned error")
+			return
+		}
+
+		// Store in cache for future identical uploads
+		notesCache.Store(cacheKey, notesCacheEntry{Summary: summary, Questions: aiQuestionsRaw})
+		log.Printf("[NOTES] cached summary+questions key=%s", cacheKey[:12])
+	}
+
+	log.Printf("[NOTES_AI] generated_raw=%d", len(aiQuestionsRaw))
+
+	notesValidated := sanitizeNotesQuestions(aiQuestionsRaw)
+	log.Printf("[NOTES_AI] after_validation=%d", len(notesValidated))
+
+	notesDeduped := dedupeGeneratedQuestionsByPrompt(notesValidated, nil)
+	log.Printf("[NOTES_AI] after_dedup=%d", len(notesDeduped))
+
+	if len(notesDeduped) == 0 {
+		log.Printf("[NOTES][generate] no valid questions after validation filename=%s extracted_len=%d parsed_count=%d valid_count=%d", header.Filename, textLen, len(aiQuestionsRaw), len(notesDeduped))
+		database.DB.Model(&upload).Update("status", "failed")
+		fail(http.StatusInternalServerError, "generate", "No valid questions generated from notes", "validation rejected all generated questions")
+		return
+	}
+
+	// 3. Build notes-first final list and append vault only for remaining gap.
+	finalCandidates := make([]notesCandidate, 0, count)
+	for _, q := range notesDeduped {
+		if len(finalCandidates) >= count {
+			break
+		}
+		finalCandidates = append(finalCandidates, notesCandidate{
+			Question: q,
+			Source:   "notes",
+		})
+	}
+
+	remaining := count - len(finalCandidates)
+	vaultAdded := 0
+	if remaining > 0 {
+		var vaultRows []models.TrainingQuestion
+		vaultQuery := database.DB.Where("topic = ? AND source <> ?", topic, "notes")
+		if difficulty != "" {
+			vaultQuery = vaultQuery.Where("difficulty = ?", difficulty)
+		}
+		if err := vaultQuery.Order("RANDOM()").Limit(remaining + 20).Find(&vaultRows).Error; err != nil {
+			log.Printf("[NOTES][save] vault query failed topic=%s difficulty=%s error=%v", topic, difficulty, err)
+		}
+
+		seen := make(map[string]struct{}, len(finalCandidates))
+		for _, fc := range finalCandidates {
+			seen[database.NormalizePrompt(fc.Question.Prompt)] = struct{}{}
+		}
+		for _, row := range vaultRows {
+			if remaining <= 0 {
+				break
+			}
+			var optArr []string
+			if err := json.Unmarshal([]byte(row.Options), &optArr); err != nil {
+				log.Printf("[NOTES][save] vault option parse failed id=%d error=%v", row.ID, err)
+				continue
+			}
+			q := services.GeneratedQuestion{
+				Type:        row.Type,
+				Prompt:      row.Prompt,
+				Options:     optArr,
+				Answer:      row.Answer,
+				Explanation: row.Explanation,
+				Difficulty:  row.Difficulty,
+			}
+			norm := database.NormalizePrompt(q.Prompt)
+			if _, exists := seen[norm]; exists {
+				continue
+			}
+			seen[norm] = struct{}{}
+			src := strings.TrimSpace(row.Source)
+			if src == "" || src == "ai" || src == "seeded" {
+				src = "vault"
+			}
+			finalCandidates = append(finalCandidates, notesCandidate{
+				Question: q,
+				Source:   src,
+				DBID:     row.ID,
+			})
+			remaining--
+			vaultAdded++
+		}
+	}
+	log.Printf("[NOTES_AI] vault_added=%d", vaultAdded)
+
+	// Final dedupe guard.
+	finalCandidates = dedupeFinalCandidatesByPrompt(finalCandidates)
+	if len(finalCandidates) > count {
+		finalCandidates = finalCandidates[:count]
+	}
+
+	notesSourceCount := 0
+	vaultSourceCount := 0
+	for _, fc := range finalCandidates {
+		if fc.Source == "notes" {
+			notesSourceCount++
+		} else {
+			vaultSourceCount++
+		}
+	}
+	log.Printf("[NOTES_AI] final_total=%d", len(finalCandidates))
+	log.Printf("[NOTES_AI] notes_source_count=%d", notesSourceCount)
+	log.Printf("[NOTES_AI] vault_source_count=%d", vaultSourceCount)
+	log.Printf("[NOTES_FINAL] requested=%d notes=%d vault=%d", count, notesSourceCount, vaultSourceCount)
+
+	// 4. Persist and create session
 	var questionIDs []uint
-	for _, q := range aiQuestions {
-		optJSON, _ := json.Marshal(q.Options)
-		tq := models.TrainingQuestion{
-			Topic:       topic,
-			Type:        q.Type,
-			Difficulty:  q.Difficulty,
-			Prompt:      q.Prompt,
-			Options:     string(optJSON),
-			Answer:      q.Answer,
-			Explanation: q.Explanation,
-			Source:      "notes",
-		}
-		if err := database.DB.Create(&tq).Error; err == nil {
+	responseQuestions := make([]gin.H, 0, len(finalCandidates))
+	for _, fc := range finalCandidates {
+		q := fc.Question
+		if fc.Source == "notes" {
+			optJSON, _ := json.Marshal(q.Options)
+			tq := models.TrainingQuestion{
+				Topic:       topic,
+				Type:        q.Type,
+				Difficulty:  q.Difficulty,
+				Prompt:      q.Prompt,
+				Options:     string(optJSON),
+				Answer:      q.Answer,
+				Explanation: q.Explanation,
+				Source:      "notes",
+			}
+			if err := database.DB.Create(&tq).Error; err != nil {
+				log.Printf("[NOTES][save] notes question save failed prompt=%q error=%v", q.Prompt, err)
+				continue
+			}
 			questionIDs = append(questionIDs, tq.ID)
+			responseQuestions = append(responseQuestions, gin.H{
+				"id":          tq.ID,
+				"type":        tq.Type,
+				"prompt":      tq.Prompt,
+				"options":     q.Options,
+				"answer":      tq.Answer,
+				"explanation": tq.Explanation,
+				"difficulty":  tq.Difficulty,
+				"source":      "notes",
+			})
+			continue
 		}
+
+		// Vault fallback keeps existing DB IDs and explicit vault-style source.
+		sourceLabel := fc.Source
+		if sourceLabel == "" {
+			sourceLabel = "vault"
+		}
+		if fc.DBID == 0 {
+			// Defensive fallback path if no DBID is present.
+			optJSON, _ := json.Marshal(q.Options)
+			tq := models.TrainingQuestion{
+				Topic:       topic,
+				Type:        q.Type,
+				Difficulty:  q.Difficulty,
+				Prompt:      q.Prompt,
+				Options:     string(optJSON),
+				Answer:      q.Answer,
+				Explanation: q.Explanation,
+				Source:      sourceLabel,
+			}
+			if err := database.DB.Create(&tq).Error; err != nil {
+				log.Printf("[NOTES][save] vault fallback save failed prompt=%q error=%v", q.Prompt, err)
+				continue
+			}
+			fc.DBID = tq.ID
+		}
+		questionIDs = append(questionIDs, fc.DBID)
+		responseQuestions = append(responseQuestions, gin.H{
+			"id":          fc.DBID,
+			"type":        q.Type,
+			"prompt":      q.Prompt,
+			"options":     q.Options,
+			"answer":      q.Answer,
+			"explanation": q.Explanation,
+			"difficulty":  q.Difficulty,
+			"source":      sourceLabel,
+		})
+	}
+
+	if len(questionIDs) == 0 {
+		log.Printf("[NOTES][save] no persisted questions filename=%s extracted_len=%d summary_len=%d parsed_count=%d valid_count=%d", header.Filename, textLen, len(summary), len(aiQuestionsRaw), len(notesDeduped))
+		database.DB.Model(&upload).Update("status", "failed")
+		fail(http.StatusInternalServerError, "save", "Failed to save generated questions", "no questions persisted")
+		return
 	}
 
 	sessionID := uuid.New().String()
@@ -136,7 +411,13 @@ func UploadNotes(c *gin.Context) {
 		Status:      "active",
 		CreatedAt:   time.Now(),
 	}
-	database.DB.Create(&session)
+	if err := database.DB.Create(&session).Error; err != nil {
+		log.Printf("[NOTES][session] session create fail error=%v", err)
+		database.DB.Model(&upload).Update("status", "failed")
+		fail(http.StatusInternalServerError, "session", "Failed to create training session from generated questions", "session insert failed")
+		return
+	}
+	log.Printf("[NOTES] session created session_id=%s question_count=%d", sessionID, len(questionIDs))
 
 	// Finalize upload record
 	database.DB.Model(&upload).Updates(map[string]interface{}{
@@ -146,13 +427,57 @@ func UploadNotes(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"session_id": sessionID,
-		"status":     "success",
+		"sessionId":  sessionID,
 		"summary":    summary,
-		"count":      len(questionIDs),
+		"questions":  responseQuestions,
 	})
 }
 
+func sanitizeNotesQuestions(questions []services.GeneratedQuestion) []services.GeneratedQuestion {
+	valid := make([]services.GeneratedQuestion, 0, len(questions))
+	for _, q := range questions {
+		if strings.TrimSpace(q.Prompt) == "" ||
+			len(q.Options) < 4 ||
+			strings.TrimSpace(q.Answer) == "" ||
+			strings.TrimSpace(q.Explanation) == "" ||
+			strings.TrimSpace(q.Difficulty) == "" {
+			continue
+		}
+		valid = append(valid, q)
+	}
+	return valid
+}
 
+func dedupeGeneratedQuestionsByPrompt(questions []services.GeneratedQuestion, existing []services.GeneratedQuestion) []services.GeneratedQuestion {
+	seen := make(map[string]struct{}, len(questions)+len(existing))
+	for _, q := range existing {
+		seen[database.NormalizePrompt(q.Prompt)] = struct{}{}
+	}
+	out := make([]services.GeneratedQuestion, 0, len(questions))
+	for _, q := range questions {
+		norm := database.NormalizePrompt(q.Prompt)
+		if _, exists := seen[norm]; exists {
+			continue
+		}
+		seen[norm] = struct{}{}
+		out = append(out, q)
+	}
+	return append(existing, out...)
+}
+
+func dedupeFinalCandidatesByPrompt(candidates []notesCandidate) []notesCandidate {
+	seen := make(map[string]struct{}, len(candidates))
+	out := make([]notesCandidate, 0, len(candidates))
+	for _, c := range candidates {
+		norm := database.NormalizePrompt(c.Question.Prompt)
+		if _, exists := seen[norm]; exists {
+			continue
+		}
+		seen[norm] = struct{}{}
+		out = append(out, c)
+	}
+	return out
+}
 
 type VerifyRequest struct {
 	QuestionID       string `json:"questionId"`
@@ -315,20 +640,20 @@ func GenerateTrainingSession(c *gin.Context) {
 
 	var finalQuestions []services.GeneratedQuestion
 	seenPrompts := make(map[string]bool)
-	
+	var hitRateLimit bool
+
 	// Telemetry Tracker
 	telemetry := struct {
-		Requested       int
-		AIFirst         int
-		AIRetry         int
-		AITotal         int
-		FallbackAdded   int
-		RemovedDuplicates int
+		Requested                int
+		AIFirst                  int
+		AITotal                  int
+		FallbackAdded            int
+		RemovedDuplicates        int
 		RepeatedPromptRejections int
 	}{Requested: requestedCount}
 
-	// 1. STAGE 1: Initial AI Generation
-	aiRes, err := services.GenerateQuestions(req.Topic, req.Difficulty, requestedCount, nil)
+	// 1. STAGE 1: Single-pass AI Generation (no retry to save quota)
+	aiRes, err := services.GenerateQuestionsBatched(req.Topic, req.Difficulty, requestedCount, nil)
 	if err == nil {
 		for _, q := range aiRes {
 			norm := database.NormalizePrompt(q.Prompt)
@@ -345,39 +670,11 @@ func GenerateTrainingSession(c *gin.Context) {
 		}
 		telemetry.AIFirst = len(finalQuestions)
 	} else {
-		log.Printf("[AI] ERROR: First call failed: %v", err)
-	}
-
-	// 2. STAGE 2: AI Retry if deficiency detected
-	if len(finalQuestions) < requestedCount {
-		deficiency := requestedCount - len(finalQuestions)
-		log.Printf("[AI] RETRY: Attempting to fill gap of %d questions", deficiency)
-		
-		excludeList := []string{}
-		for p := range seenPrompts {
-			excludeList = append(excludeList, p)
-		}
-
-		retryRes, err := services.GenerateQuestions(req.Topic, req.Difficulty, deficiency, excludeList)
-		if err == nil {
-			retryAdded := 0
-			for _, q := range retryRes {
-				norm := database.NormalizePrompt(q.Prompt)
-				if seenPrompts[norm] {
-					telemetry.RemovedDuplicates++
-					continue
-				}
-				if database.CheckPromptExists(req.Topic, q.Prompt) {
-					telemetry.RepeatedPromptRejections++
-					continue
-				}
-				seenPrompts[norm] = true
-				finalQuestions = append(finalQuestions, q)
-				retryAdded++
-			}
-			telemetry.AIRetry = retryAdded
+		if errors.Is(err, services.ErrGeminiRateLimit) {
+			log.Printf("[GEMINI_RATE_LIMIT] GenerateTrainingSession blocked")
+			hitRateLimit = true
 		} else {
-			log.Printf("[AI] ERROR: Retry call failed: %v", err)
+			log.Printf("[AI] ERROR: Generation call failed: %v", err)
 		}
 	}
 
@@ -390,8 +687,8 @@ func GenerateTrainingSession(c *gin.Context) {
 	if len(finalQuestions) < requestedCount {
 		gap := requestedCount - len(finalQuestions)
 		log.Printf("[FALLBACK] Pulling %d questions from DB vault", gap)
-		
-		dbQuestions, _ := database.GetQuestions(req.Topic, req.Difficulty, gap + 10) // fetch extra for dedup
+
+		dbQuestions, _ := database.GetQuestions(req.Topic, req.Difficulty, gap+10) // fetch extra for dedup
 		fallbackCount := 0
 		for _, dbq := range dbQuestions {
 			if fallbackCount >= gap {
@@ -401,11 +698,11 @@ func GenerateTrainingSession(c *gin.Context) {
 			if seenPrompts[norm] {
 				continue
 			}
-			
+
 			seenPrompts[norm] = true
 			var optArr []string
 			json.Unmarshal([]byte(dbq.Options), &optArr)
-			
+
 			finalQuestions = append(finalQuestions, services.GeneratedQuestion{
 				Type:        dbq.Type,
 				Prompt:      dbq.Prompt,
@@ -452,12 +749,19 @@ func GenerateTrainingSession(c *gin.Context) {
 	}
 
 	// Logging Telemetry
-	log.Printf("[COUNT] requested=%d ai_first=%d ai_retry=%d ai_total=%d fallback_added=%d final_returned=%d", 
-		telemetry.Requested, telemetry.AIFirst, telemetry.AIRetry, telemetry.AITotal, telemetry.FallbackAdded, len(questionIDs))
+	log.Printf("[COUNT] requested=%d ai_first=%d ai_total=%d fallback_added=%d final_returned=%d",
+		telemetry.Requested, telemetry.AIFirst, telemetry.AITotal, telemetry.FallbackAdded, len(questionIDs))
 	log.Printf("[DEDUP] removed_duplicates=%d", telemetry.RemovedDuplicates)
 	log.Printf("[VARIETY] repeated_prompt_rejections=%d", telemetry.RepeatedPromptRejections)
 
 	if len(questionIDs) == 0 {
+		if hitRateLimit {
+			c.JSON(http.StatusTooManyRequests, gin.H{
+				"error": "Gemini free-tier quota exceeded. Please wait a few seconds and try again.",
+				"stage": "gemini_rate_limit",
+			})
+			return
+		}
 		c.JSON(http.StatusNotFound, gin.H{"error": "Failed to assemble session. Logic vault is empty."})
 		return
 	}
@@ -499,10 +803,9 @@ func GenerateTrainingSession(c *gin.Context) {
 	})
 }
 
-
 func GetTrainingSession(c *gin.Context) {
 	sessionID := c.Param("id")
-	
+
 	session, questions, err := database.GetSession(sessionID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Session module missing or corrupted"})
