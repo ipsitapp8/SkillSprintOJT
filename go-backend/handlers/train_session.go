@@ -5,6 +5,7 @@ import (
 	"backend/models"
 	"backend/services"
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"strings"
@@ -63,8 +64,22 @@ func CreateTrainSession(c *gin.Context) {
 		needed := count - len(questions)
 		log.Printf("[AI] generating %d questions for topic=%s", needed, topic)
 
-		aiQuestions, aiErr := services.GenerateQuestions(topic, difficulty, needed, nil)
-		if aiErr == nil && len(aiQuestions) > 0 {
+		aiQuestions, aiErr := services.GenerateQuestionsBatched(topic, difficulty, needed, nil)
+		if aiErr != nil {
+			if errors.Is(aiErr, services.ErrGeminiRateLimit) {
+				log.Printf("[GEMINI_RATE_LIMIT] CreateTrainSession blocked")
+				if len(questions) == 0 {
+					c.JSON(http.StatusTooManyRequests, gin.H{
+						"error": "Gemini free-tier quota exceeded. Please wait a few seconds and try again.",
+						"stage": "gemini_rate_limit",
+					})
+					return
+				}
+				log.Printf("[AI] Rate limited but have %d DB questions, continuing", len(questions))
+			} else {
+				log.Printf("[AI_FAIL] fallback triggered: error=%v", aiErr)
+			}
+		} else if len(aiQuestions) > 0 {
 			// Convert to DB models
 			var newModels []models.TrainingQuestion
 			for _, q := range aiQuestions {
@@ -92,8 +107,6 @@ func CreateTrainSession(c *gin.Context) {
 			// Refetch all questions to get new IDs
 			questions, _ = database.GetQuestions(topic, difficulty, count)
 			log.Printf("[AI] success: session now has %d questions", len(questions))
-		} else {
-			log.Printf("[AI_FAIL] fallback triggered: error=%v", aiErr)
 		}
 	}
 

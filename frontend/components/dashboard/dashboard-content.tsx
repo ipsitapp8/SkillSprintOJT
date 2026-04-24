@@ -34,6 +34,7 @@ interface UserData {
     completedAt: string;
     quiz: { title: string };
   }>;
+  email?: string;
 }
 
 export function DashboardContent() {
@@ -118,7 +119,7 @@ export function DashboardContent() {
             label="PEAK SCORE"
             value={data.stats.highScore.toString()}
             icon={Crown}
-            color="yellow"
+            color="amber"
             sub="PERSONAL BEST"
           />
           <StatCard
@@ -252,7 +253,7 @@ function StatCard({
       glow: "group-hover:text-glow-pink",
       shadow: "group-hover:shadow-[0_0_20px_rgba(255,45,111,0.15)]"
     },
-    yellow: {
+    amber: {
       border: "border-neon-yellow/20 group-hover:border-neon-yellow",
       text: "text-neon-yellow/70 group-hover:text-neon-yellow",
       glow: "group-hover:text-glow-yellow",
@@ -260,7 +261,14 @@ function StatCard({
     }
   }
 
-  const current = colorClasses[color as keyof typeof colorClasses]
+  const fallbackStyle = {
+    border: "border-panel-border",
+    text: "text-muted-foreground",
+    glow: "",
+    shadow: ""
+  }
+
+  const current = colorClasses[color as keyof typeof colorClasses] ?? fallbackStyle
 
   return (
     <div className={`group border ${current.border} bg-panel-bg/60 p-4 transition-all duration-300 hover:bg-panel-bg/80 ${current.shadow}`}>
